@@ -16,7 +16,24 @@
 //! simulation gives the same answer on every machine. See rewrite.md.
 
 use glam::{Affine3A, EulerRot, Mat3A, Mat4, Quat, Vec3, Vec3A, Vec4};
+use glam::{I16Vec2, I16Vec3, I16Vec4, I64Vec2, I64Vec3, I64Vec4, I8Vec2, I8Vec3, I8Vec4};
+use glam::{IVec2, IVec3, IVec4, UVec2, UVec3, UVec4};
+use glam::{U16Vec2, U16Vec3, U16Vec4, U64Vec2, U64Vec3, U64Vec4, U8Vec2, U8Vec3, U8Vec4};
 use std::fmt::Write;
+
+/// Makes one `Dump` method that prints the lanes of an integer vector as hex.
+///
+/// The signed types print the bit pattern, thus the cast to the unsigned type
+/// of the same width. The width is the count of hex digits of one lane.
+macro_rules! int_lane_dump {
+    ($name:ident, $vt:ty, $ust:ty, $width:expr, $($lane:ident),+) => {
+        fn $name(&mut self, label: &str, v: $vt) {
+            write!(self.0, "{label:<32}").unwrap();
+            $(write!(self.0, " {:0w$x}", v.$lane as $ust, w = $width).unwrap();)+
+            writeln!(self.0).unwrap();
+        }
+    };
+}
 
 struct Dump(String);
 
@@ -63,6 +80,207 @@ impl Dump {
         }
         writeln!(self.0).unwrap();
     }
+
+    // The integer helpers. A comparison gives a `BVec`, and the bitmask of that
+    // `BVec` is the value that goes in the file. Thus the comparison itself is
+    // part of the stored bits.
+    fn mask(&mut self, label: &str, m: u32) {
+        writeln!(self.0, "{label:<32} {m:02x}").unwrap();
+    }
+    fn s8(&mut self, label: &str, v: u8) {
+        writeln!(self.0, "{label:<32} {v:02x}").unwrap();
+    }
+    fn s16(&mut self, label: &str, v: u16) {
+        writeln!(self.0, "{label:<32} {v:04x}").unwrap();
+    }
+    fn s32(&mut self, label: &str, v: u32) {
+        writeln!(self.0, "{label:<32} {v:08x}").unwrap();
+    }
+    fn s64(&mut self, label: &str, v: u64) {
+        writeln!(self.0, "{label:<32} {v:016x}").unwrap();
+    }
+
+    int_lane_dump!(i8v2, I8Vec2, u8, 2, x, y);
+    int_lane_dump!(i8v3, I8Vec3, u8, 2, x, y, z);
+    int_lane_dump!(i8v4, I8Vec4, u8, 2, x, y, z, w);
+    int_lane_dump!(u8v2, U8Vec2, u8, 2, x, y);
+    int_lane_dump!(u8v3, U8Vec3, u8, 2, x, y, z);
+    int_lane_dump!(u8v4, U8Vec4, u8, 2, x, y, z, w);
+
+    int_lane_dump!(i16v2, I16Vec2, u16, 4, x, y);
+    int_lane_dump!(i16v3, I16Vec3, u16, 4, x, y, z);
+    int_lane_dump!(i16v4, I16Vec4, u16, 4, x, y, z, w);
+    int_lane_dump!(u16v2, U16Vec2, u16, 4, x, y);
+    int_lane_dump!(u16v3, U16Vec3, u16, 4, x, y, z);
+    int_lane_dump!(u16v4, U16Vec4, u16, 4, x, y, z, w);
+
+    int_lane_dump!(i32v2, IVec2, u32, 8, x, y);
+    int_lane_dump!(i32v3, IVec3, u32, 8, x, y, z);
+    int_lane_dump!(i32v4, IVec4, u32, 8, x, y, z, w);
+    int_lane_dump!(u32v2, UVec2, u32, 8, x, y);
+    int_lane_dump!(u32v3, UVec3, u32, 8, x, y, z);
+    int_lane_dump!(u32v4, UVec4, u32, 8, x, y, z, w);
+
+    int_lane_dump!(i64v2, I64Vec2, u64, 16, x, y);
+    int_lane_dump!(i64v3, I64Vec3, u64, 16, x, y, z);
+    int_lane_dump!(i64v4, I64Vec4, u64, 16, x, y, z, w);
+    int_lane_dump!(u64v2, U64Vec2, u64, 16, x, y);
+    int_lane_dump!(u64v3, U64Vec3, u64, 16, x, y, z);
+    int_lane_dump!(u64v4, U64Vec4, u64, 16, x, y, z, w);
+}
+
+/// Appends the operations that every integer vector type has.
+///
+/// The values of `a`, `b`, `p`, `n` and `q` must not overflow, because a debug
+/// build panics on an overflow. The boundary cases go through `wrapping_*` and
+/// `saturating_*`, which never panic.
+macro_rules! int_common {
+    (
+        $d:ident, $tag:literal, $vf:ident, $sf:ident, $vt:ty, $ust:ty,
+        a: $a:expr, b: $b:expr, p: $p:expr,
+        clamp: $clo:expr, $chi:expr, div: $n:expr, $q:expr $(,)?
+    ) => {{
+        let a = <$vt>::from_array($a);
+        let b = <$vt>::from_array($b);
+        let p = <$vt>::from_array($p);
+        let n = <$vt>::from_array($n);
+        let q = <$vt>::from_array($q);
+        let lo = <$vt>::MIN;
+        let hi = <$vt>::MAX;
+        let one = <$vt>::ONE;
+
+        $d.0.push_str(concat!("--- ", $tag, " ---\n"));
+        $d.$vf(concat!($tag, ".add"), a + b);
+        $d.$vf(concat!($tag, ".sub"), a - b);
+        $d.$vf(concat!($tag, ".mul"), a * b);
+        $d.$vf(concat!($tag, ".min"), a.min(b));
+        $d.$vf(concat!($tag, ".max"), a.max(b));
+        $d.$vf(
+            concat!($tag, ".clamp"),
+            a.clamp(<$vt>::splat($clo), <$vt>::splat($chi)),
+        );
+        $d.mask(concat!($tag, ".cmpeq"), a.cmpeq(b).bitmask());
+        $d.mask(concat!($tag, ".cmpne"), a.cmpne(b).bitmask());
+        $d.mask(concat!($tag, ".cmplt"), a.cmplt(b).bitmask());
+        $d.mask(concat!($tag, ".cmple"), a.cmple(b).bitmask());
+        $d.mask(concat!($tag, ".cmpgt"), a.cmpgt(b).bitmask());
+        $d.mask(concat!($tag, ".cmpge"), a.cmpge(b).bitmask());
+        $d.$vf(concat!($tag, ".select"), <$vt>::select(a.cmplt(b), a, b));
+        $d.$vf(concat!($tag, ".bitand"), a & b);
+        $d.$vf(concat!($tag, ".bitor"), a | b);
+        $d.$vf(concat!($tag, ".bitxor"), a ^ b);
+        $d.$vf(concat!($tag, ".not"), !a);
+        $d.$sf(concat!($tag, ".dot"), a.dot(b) as $ust);
+        $d.$sf(concat!($tag, ".element_sum"), a.element_sum() as $ust);
+        $d.$sf(
+            concat!($tag, ".element_product"),
+            p.element_product() as $ust,
+        );
+        $d.$sf(concat!($tag, ".min_element"), a.min_element() as $ust);
+        $d.$sf(concat!($tag, ".max_element"), a.max_element() as $ust);
+        $d.$vf(concat!($tag, ".wrapping_add hi+one"), hi.wrapping_add(one));
+        $d.$vf(concat!($tag, ".wrapping_add hi+hi"), hi.wrapping_add(hi));
+        $d.$vf(concat!($tag, ".wrapping_sub lo-one"), lo.wrapping_sub(one));
+        $d.$vf(concat!($tag, ".wrapping_sub lo-hi"), lo.wrapping_sub(hi));
+        $d.$vf(concat!($tag, ".wrapping_mul hi*hi"), hi.wrapping_mul(hi));
+        $d.$vf(concat!($tag, ".wrapping_mul lo*lo"), lo.wrapping_mul(lo));
+        $d.$vf(concat!($tag, ".wrapping_mul hi*lo"), hi.wrapping_mul(lo));
+        $d.$vf(
+            concat!($tag, ".saturating_add hi+one"),
+            hi.saturating_add(one),
+        );
+        $d.$vf(
+            concat!($tag, ".saturating_add hi+hi"),
+            hi.saturating_add(hi),
+        );
+        $d.$vf(
+            concat!($tag, ".saturating_add lo+lo"),
+            lo.saturating_add(lo),
+        );
+        $d.$vf(
+            concat!($tag, ".saturating_sub lo-one"),
+            lo.saturating_sub(one),
+        );
+        $d.$vf(
+            concat!($tag, ".saturating_sub lo-hi"),
+            lo.saturating_sub(hi),
+        );
+        $d.$vf(
+            concat!($tag, ".saturating_sub hi-lo"),
+            hi.saturating_sub(lo),
+        );
+        $d.$vf(concat!($tag, ".div"), n / q);
+        $d.$vf(concat!($tag, ".rem"), n % q);
+        $d.$vf(concat!($tag, ".shl 1"), a << 1u32);
+        $d.$vf(concat!($tag, ".shl 3"), a << 3u32);
+        $d.$vf(concat!($tag, ".shr 1"), a >> 1u32);
+        $d.$vf(concat!($tag, ".shr 3"), a >> 3u32);
+    }};
+}
+
+/// Appends the operations that only a signed integer vector type has.
+///
+/// `x` must not hold the MIN value, because `MIN.abs()` panics in a debug
+/// build. `y` holds negative values, thus a right shift of `y` shows the
+/// difference between an arithmetic shift and a logical shift.
+macro_rules! int_signed {
+    (
+        $d:ident, $tag:literal, $vf:ident, $vt:ty,
+        abs: $x:expr, shr: $y:expr, sb: $h:expr, $l:expr $(,)?
+    ) => {{
+        let x = <$vt>::from_array($x);
+        let y = <$vt>::from_array($y);
+        let h = <$vt>::from_array($h);
+        let l = <$vt>::from_array($l);
+
+        $d.$vf(concat!($tag, ".abs"), x.abs());
+        $d.$vf(concat!($tag, ".signum"), x.signum());
+        $d.$vf(concat!($tag, ".shr neg 1"), y >> 1u32);
+        $d.$vf(concat!($tag, ".shr neg 3"), y >> 3u32);
+        $d.$vf(concat!($tag, ".shl neg 2"), y << 2u32);
+        $d.$vf(concat!($tag, ".not neg"), !y);
+        $d.mask(concat!($tag, ".is_negative"), y.is_negative_bitmask());
+        $d.mask(concat!($tag, ".sb.cmpeq"), h.cmpeq(l).bitmask());
+        $d.mask(concat!($tag, ".sb.cmpne"), h.cmpne(l).bitmask());
+        $d.mask(concat!($tag, ".sb.cmplt"), h.cmplt(l).bitmask());
+        $d.mask(concat!($tag, ".sb.cmple"), h.cmple(l).bitmask());
+        $d.mask(concat!($tag, ".sb.cmpgt"), h.cmpgt(l).bitmask());
+        $d.mask(concat!($tag, ".sb.cmpge"), h.cmpge(l).bitmask());
+        $d.$vf(concat!($tag, ".sb.min"), h.min(l));
+        $d.$vf(concat!($tag, ".sb.max"), h.max(l));
+        $d.$vf(concat!($tag, ".sb.select"), <$vt>::select(h.cmpgt(l), h, l));
+    }};
+}
+
+/// Appends the unsigned comparison cases, where the high bit is set.
+///
+/// x86-64 below AVX-512 has no unsigned packed comparison. A SIMD body must
+/// therefore add a sign bias with an XOR before a signed comparison. If that
+/// bias is absent, every mask below flips, and this test fails. This is the
+/// most valuable case in the file.
+macro_rules! int_unsigned {
+    (
+        $d:ident, $tag:literal, $vf:ident, $vt:ty, $ust:ty,
+        hb: $h:expr, $l:expr $(,)?
+    ) => {{
+        let h = <$vt>::from_array($h);
+        let l = <$vt>::from_array($l);
+        let mid = <$vt>::splat((<$ust>::MAX >> 1) + 1);
+
+        $d.mask(concat!($tag, ".hb.cmpeq"), h.cmpeq(l).bitmask());
+        $d.mask(concat!($tag, ".hb.cmpne"), h.cmpne(l).bitmask());
+        $d.mask(concat!($tag, ".hb.cmplt"), h.cmplt(l).bitmask());
+        $d.mask(concat!($tag, ".hb.cmple"), h.cmple(l).bitmask());
+        $d.mask(concat!($tag, ".hb.cmpgt"), h.cmpgt(l).bitmask());
+        $d.mask(concat!($tag, ".hb.cmpge"), h.cmpge(l).bitmask());
+        $d.mask(concat!($tag, ".hb.cmpge mid"), h.cmpge(mid).bitmask());
+        $d.$vf(concat!($tag, ".hb.min"), h.min(l));
+        $d.$vf(concat!($tag, ".hb.max"), h.max(l));
+        $d.$vf(concat!($tag, ".hb.clamp"), h.clamp(<$vt>::ZERO, mid));
+        $d.$vf(concat!($tag, ".hb.select"), <$vt>::select(h.cmpgt(l), h, l));
+        $d.$vf(concat!($tag, ".hb.shr 1"), h >> 1u32);
+        $d.$vf(concat!($tag, ".hb.shr 4"), h >> 4u32);
+    }};
 }
 
 fn dump() -> String {
@@ -168,7 +386,10 @@ fn dump() -> String {
     );
     d.q(
         "quat.from_rotation_arc",
-        Quat::from_rotation_arc(Vec3::new(0.2, 0.3, 0.4).normalize(), -Vec3::new(0.2, 0.3, 0.4).normalize()),
+        Quat::from_rotation_arc(
+            Vec3::new(0.2, 0.3, 0.4).normalize(),
+            -Vec3::new(0.2, 0.3, 0.4).normalize(),
+        ),
     );
 
     d.0.push_str("--- affine ---\n");
@@ -192,6 +413,239 @@ fn dump() -> String {
             Vec3::ZERO,
             Vec3::new(0.0, 1.0, 0.0),
         ),
+    );
+
+    // The integer vector types. The `-> BVec -> bitmask` path puts the
+    // comparison result itself in the file. The `wrapping_*` and
+    // `saturating_*` cases sit at the type boundary, where a SIMD body is
+    // most likely to differ from the scalar body. See rewrite.md.
+    int_common!(
+        d, "i8vec2", i8v2, s8, I8Vec2, u8,
+        a: [3, -7], b: [5, 2], p: [2, -3],
+        clamp: -4, 6, div: [-7, 7], [2, -2],
+    );
+    int_signed!(
+        d, "i8vec2", i8v2, I8Vec2,
+        abs: [-5, 0], shr: [-64, -1],
+        sb: [i8::MAX, -1], [-1, i8::MAX],
+    );
+    int_common!(
+        d, "i8vec3", i8v3, s8, I8Vec3, u8,
+        a: [3, -7, 2], b: [5, 2, -9], p: [2, -3, 1],
+        clamp: -4, 6, div: [-7, 7, -8], [2, -2, 3],
+    );
+    int_signed!(
+        d, "i8vec3", i8v3, I8Vec3,
+        abs: [-5, 0, 9], shr: [-64, -1, 25],
+        sb: [i8::MAX, -1, i8::MIN], [-1, i8::MAX, 0],
+    );
+    int_common!(
+        d, "i8vec4", i8v4, s8, I8Vec4, u8,
+        a: [3, -7, 2, -11], b: [5, 2, -9, 4], p: [2, -3, 1, -2],
+        clamp: -4, 6, div: [-7, 7, -8, 9], [2, -2, 3, -4],
+    );
+    int_signed!(
+        d, "i8vec4", i8v4, I8Vec4,
+        abs: [-5, 0, 9, -1], shr: [-64, -1, 25, -7],
+        sb: [i8::MAX, -1, i8::MIN, 0], [-1, i8::MAX, 0, i8::MIN],
+    );
+    int_common!(
+        d, "u8vec2", u8v2, s8, U8Vec2, u8,
+        a: [11, 7], b: [3, 2], p: [2, 3],
+        clamp: 4, 9, div: [7, 9], [2, 4],
+    );
+    int_unsigned!(
+        d, "u8vec2", u8v2, U8Vec2, u8,
+        hb: [u8::MAX, 1], [1, u8::MAX],
+    );
+    int_common!(
+        d, "u8vec3", u8v3, s8, U8Vec3, u8,
+        a: [11, 7, 9], b: [3, 2, 4], p: [2, 3, 1],
+        clamp: 4, 9, div: [7, 9, 8], [2, 4, 3],
+    );
+    int_unsigned!(
+        d, "u8vec3", u8v3, U8Vec3, u8,
+        hb: [u8::MAX, 1, 0x80], [1, u8::MAX, 0x7f],
+    );
+    int_common!(
+        d, "u8vec4", u8v4, s8, U8Vec4, u8,
+        a: [11, 7, 9, 5], b: [3, 2, 4, 1], p: [2, 3, 1, 2],
+        clamp: 4, 9, div: [7, 9, 8, 5], [2, 4, 3, 2],
+    );
+    int_unsigned!(
+        d, "u8vec4", u8v4, U8Vec4, u8,
+        hb: [u8::MAX, 1, 0x80, 0x7f], [1, u8::MAX, 0x7f, 0x80],
+    );
+    int_common!(
+        d, "i16vec2", i16v2, s16, I16Vec2, u16,
+        a: [3, -7], b: [5, 2], p: [2, -3],
+        clamp: -4, 6, div: [-7, 7], [2, -2],
+    );
+    int_signed!(
+        d, "i16vec2", i16v2, I16Vec2,
+        abs: [-5, 0], shr: [-64, -1],
+        sb: [i16::MAX, -1], [-1, i16::MAX],
+    );
+    int_common!(
+        d, "i16vec3", i16v3, s16, I16Vec3, u16,
+        a: [3, -7, 2], b: [5, 2, -9], p: [2, -3, 1],
+        clamp: -4, 6, div: [-7, 7, -8], [2, -2, 3],
+    );
+    int_signed!(
+        d, "i16vec3", i16v3, I16Vec3,
+        abs: [-5, 0, 9], shr: [-64, -1, 25],
+        sb: [i16::MAX, -1, i16::MIN], [-1, i16::MAX, 0],
+    );
+    int_common!(
+        d, "i16vec4", i16v4, s16, I16Vec4, u16,
+        a: [3, -7, 2, -11], b: [5, 2, -9, 4], p: [2, -3, 1, -2],
+        clamp: -4, 6, div: [-7, 7, -8, 9], [2, -2, 3, -4],
+    );
+    int_signed!(
+        d, "i16vec4", i16v4, I16Vec4,
+        abs: [-5, 0, 9, -1], shr: [-64, -1, 25, -7],
+        sb: [i16::MAX, -1, i16::MIN, 0], [-1, i16::MAX, 0, i16::MIN],
+    );
+    int_common!(
+        d, "u16vec2", u16v2, s16, U16Vec2, u16,
+        a: [11, 7], b: [3, 2], p: [2, 3],
+        clamp: 4, 9, div: [7, 9], [2, 4],
+    );
+    int_unsigned!(
+        d, "u16vec2", u16v2, U16Vec2, u16,
+        hb: [u16::MAX, 1], [1, u16::MAX],
+    );
+    int_common!(
+        d, "u16vec3", u16v3, s16, U16Vec3, u16,
+        a: [11, 7, 9], b: [3, 2, 4], p: [2, 3, 1],
+        clamp: 4, 9, div: [7, 9, 8], [2, 4, 3],
+    );
+    int_unsigned!(
+        d, "u16vec3", u16v3, U16Vec3, u16,
+        hb: [u16::MAX, 1, 0x8000], [1, u16::MAX, 0x7fff],
+    );
+    int_common!(
+        d, "u16vec4", u16v4, s16, U16Vec4, u16,
+        a: [11, 7, 9, 5], b: [3, 2, 4, 1], p: [2, 3, 1, 2],
+        clamp: 4, 9, div: [7, 9, 8, 5], [2, 4, 3, 2],
+    );
+    int_unsigned!(
+        d, "u16vec4", u16v4, U16Vec4, u16,
+        hb: [u16::MAX, 1, 0x8000, 0x7fff], [1, u16::MAX, 0x7fff, 0x8000],
+    );
+    int_common!(
+        d, "ivec2", i32v2, s32, IVec2, u32,
+        a: [3, -7], b: [5, 2], p: [2, -3],
+        clamp: -4, 6, div: [-7, 7], [2, -2],
+    );
+    int_signed!(
+        d, "ivec2", i32v2, IVec2,
+        abs: [-5, 0], shr: [-64, -1],
+        sb: [i32::MAX, -1], [-1, i32::MAX],
+    );
+    int_common!(
+        d, "ivec3", i32v3, s32, IVec3, u32,
+        a: [3, -7, 2], b: [5, 2, -9], p: [2, -3, 1],
+        clamp: -4, 6, div: [-7, 7, -8], [2, -2, 3],
+    );
+    int_signed!(
+        d, "ivec3", i32v3, IVec3,
+        abs: [-5, 0, 9], shr: [-64, -1, 25],
+        sb: [i32::MAX, -1, i32::MIN], [-1, i32::MAX, 0],
+    );
+    int_common!(
+        d, "ivec4", i32v4, s32, IVec4, u32,
+        a: [3, -7, 2, -11], b: [5, 2, -9, 4], p: [2, -3, 1, -2],
+        clamp: -4, 6, div: [-7, 7, -8, 9], [2, -2, 3, -4],
+    );
+    int_signed!(
+        d, "ivec4", i32v4, IVec4,
+        abs: [-5, 0, 9, -1], shr: [-64, -1, 25, -7],
+        sb: [i32::MAX, -1, i32::MIN, 0], [-1, i32::MAX, 0, i32::MIN],
+    );
+    int_common!(
+        d, "uvec2", u32v2, s32, UVec2, u32,
+        a: [11, 7], b: [3, 2], p: [2, 3],
+        clamp: 4, 9, div: [7, 9], [2, 4],
+    );
+    int_unsigned!(
+        d, "uvec2", u32v2, UVec2, u32,
+        hb: [u32::MAX, 1], [1, u32::MAX],
+    );
+    int_common!(
+        d, "uvec3", u32v3, s32, UVec3, u32,
+        a: [11, 7, 9], b: [3, 2, 4], p: [2, 3, 1],
+        clamp: 4, 9, div: [7, 9, 8], [2, 4, 3],
+    );
+    int_unsigned!(
+        d, "uvec3", u32v3, UVec3, u32,
+        hb: [u32::MAX, 1, 0x8000_0000], [1, u32::MAX, 0x7fff_ffff],
+    );
+    int_common!(
+        d, "uvec4", u32v4, s32, UVec4, u32,
+        a: [11, 7, 9, 5], b: [3, 2, 4, 1], p: [2, 3, 1, 2],
+        clamp: 4, 9, div: [7, 9, 8, 5], [2, 4, 3, 2],
+    );
+    int_unsigned!(
+        d, "uvec4", u32v4, UVec4, u32,
+        hb: [u32::MAX, 1, 0x8000_0000, 0x7fff_ffff], [1, u32::MAX, 0x7fff_ffff, 0x8000_0000],
+    );
+    int_common!(
+        d, "i64vec2", i64v2, s64, I64Vec2, u64,
+        a: [3, -7], b: [5, 2], p: [2, -3],
+        clamp: -4, 6, div: [-7, 7], [2, -2],
+    );
+    int_signed!(
+        d, "i64vec2", i64v2, I64Vec2,
+        abs: [-5, 0], shr: [-64, -1],
+        sb: [i64::MAX, -1], [-1, i64::MAX],
+    );
+    int_common!(
+        d, "i64vec3", i64v3, s64, I64Vec3, u64,
+        a: [3, -7, 2], b: [5, 2, -9], p: [2, -3, 1],
+        clamp: -4, 6, div: [-7, 7, -8], [2, -2, 3],
+    );
+    int_signed!(
+        d, "i64vec3", i64v3, I64Vec3,
+        abs: [-5, 0, 9], shr: [-64, -1, 25],
+        sb: [i64::MAX, -1, i64::MIN], [-1, i64::MAX, 0],
+    );
+    int_common!(
+        d, "i64vec4", i64v4, s64, I64Vec4, u64,
+        a: [3, -7, 2, -11], b: [5, 2, -9, 4], p: [2, -3, 1, -2],
+        clamp: -4, 6, div: [-7, 7, -8, 9], [2, -2, 3, -4],
+    );
+    int_signed!(
+        d, "i64vec4", i64v4, I64Vec4,
+        abs: [-5, 0, 9, -1], shr: [-64, -1, 25, -7],
+        sb: [i64::MAX, -1, i64::MIN, 0], [-1, i64::MAX, 0, i64::MIN],
+    );
+    int_common!(
+        d, "u64vec2", u64v2, s64, U64Vec2, u64,
+        a: [11, 7], b: [3, 2], p: [2, 3],
+        clamp: 4, 9, div: [7, 9], [2, 4],
+    );
+    int_unsigned!(
+        d, "u64vec2", u64v2, U64Vec2, u64,
+        hb: [u64::MAX, 1], [1, u64::MAX],
+    );
+    int_common!(
+        d, "u64vec3", u64v3, s64, U64Vec3, u64,
+        a: [11, 7, 9], b: [3, 2, 4], p: [2, 3, 1],
+        clamp: 4, 9, div: [7, 9, 8], [2, 4, 3],
+    );
+    int_unsigned!(
+        d, "u64vec3", u64v3, U64Vec3, u64,
+        hb: [u64::MAX, 1, 0x8000_0000_0000_0000], [1, u64::MAX, 0x7fff_ffff_ffff_ffff],
+    );
+    int_common!(
+        d, "u64vec4", u64v4, s64, U64Vec4, u64,
+        a: [11, 7, 9, 5], b: [3, 2, 4, 1], p: [2, 3, 1, 2],
+        clamp: 4, 9, div: [7, 9, 8, 5], [2, 4, 3, 2],
+    );
+    int_unsigned!(
+        d, "u64vec4", u64v4, U64Vec4, u64,
+        hb: [u64::MAX, 1, 0x8000_0000_0000_0000, 0x7fff_ffff_ffff_ffff], [1, u64::MAX, 0x7fff_ffff_ffff_ffff, 0x8000_0000_0000_0000],
     );
 
     d.0

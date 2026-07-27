@@ -113,6 +113,42 @@ On all targets:
 - Do not write floating-point values as text. Use the bit patterns.
 - Do not put data in the payload of a NaN.
 
+**Rules for integer vectors**
+
+- Integer arithmetic is exact, thus a SIMD body and a scalar body give the same
+  bits. The risk is not rounding. The risk is that the two processors define an
+  edge case differently.
+- Do not put `Shl`, `Shr`, `Div` or `Rem` in a SIMD body. For value -8 and count
+  -1, x86-64 `VPSLLVD` gives 0 and ARM `SSHL` gives -4, and scalar Rust masks the
+  count and gives neither. Neither processor has a packed integer divide.
+- Do not use a saturating instruction for an operation that wraps. `+`, `-`, `*`,
+  negate and `abs` wrap in release. `VQADD`, `VQSUB`, `VQABS`, `VQNEG`, `PADDS`
+  and `PSUBS` saturate. `saturating_add` and the other saturating methods are
+  `const fn` and stay scalar, thus a SIMD body never needs these instructions.
+  `tests/forbidden.rs` bans them.
+- A SIMD body for an operation that can overflow is for release only. Rust panics
+  on overflow in debug and wraps in release, and a SIMD lane always wraps. Gate
+  such a body on `not(debug_assertions)`. The correct gate is `overflow_checks`,
+  but it is unstable on the pinned compiler. Thus a release profile that sets
+  `overflow-checks = true` gets the wrapping body and no panic.
+- Give the 8-bit and 16-bit vectors plain `#[repr(C)]` fields. Do not give them a
+  `__m128i` or `int16x4_t` field. The size and the alignment must not change,
+  because `encase`, `bytemuck`, `zerocopy` and `rkyv` read them.
+- Measure before you write a SIMD body, and measure again after. A hand-written
+  body works on one vector at a time and can stop the compiler from working on
+  many. This made the 8-bit add 64 percent slower, and that body was removed.
+- Keep `saturating_*`, `wrapping_*` and `checked_*` as `const fn`. The `const`
+  keyword is not a cost here. The compiler vectorizes these across the elements
+  of a loop and uses the full register, thus `I16Vec4::saturating_add` measures
+  1.30 microseconds for 8192 vectors while the hand-written SIMD `+` measures
+  2.90. A SIMD body for these would be about two times SLOWER.
+- The trait boundary, not the arithmetic, is the cost of `+`, `-` and `*` on the
+  narrow types. The same field arithmetic in a closure measures 0.98
+  microseconds, and behind `impl Add` it measures 4.60. `#[inline(always)]` does
+  not change this. The 8-byte struct becomes one 64-bit register at the function
+  boundary, and the SWAR happens before the caller can vectorize. In a hot loop,
+  prefer `a.wrapping_add(b)` to `a + b`.
+
 **Tests**
 
 - Keep the scalar backend. Use it as the reference for tests. Do not ship it.

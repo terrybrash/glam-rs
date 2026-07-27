@@ -29,6 +29,11 @@ use core::fmt;
 use core::iter::{Product, Sum};
 use core::{f32, ops::*};
 
+#[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+use core::arch::aarch64::*;
+#[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+use core::arch::x86_64::*;
+
 #[cfg(feature = "zerocopy")]
 use zerocopy_derive::*;
 
@@ -102,6 +107,34 @@ impl U8Vec4 {
 
             w: v,
         }
+    }
+
+    #[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+    #[inline(always)]
+    fn to_v(self) -> uint8x8_t {
+        let bits: u32 = unsafe { core::mem::transmute(self) };
+        unsafe { vreinterpret_u8_u32(vdup_n_u32(bits)) }
+    }
+
+    #[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+    #[inline(always)]
+    fn from_v(v: uint8x8_t) -> Self {
+        let bits = unsafe { vget_lane_u32::<0>(vreinterpret_u32_u8(v)) };
+        unsafe { core::mem::transmute(bits) }
+    }
+
+    #[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+    #[inline(always)]
+    fn to_v(self) -> __m128i {
+        let bits: u32 = unsafe { core::mem::transmute(self) };
+        unsafe { _mm_cvtsi32_si128(bits as i32) }
+    }
+
+    #[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+    #[inline(always)]
+    fn from_v(v: __m128i) -> Self {
+        let bits = unsafe { _mm_cvtsi128_si32(v) } as u32;
+        unsafe { core::mem::transmute(bits) }
     }
 
     /// Returns a vector containing each element of `self` modified by a mapping function `f`.
@@ -228,11 +261,25 @@ impl U8Vec4 {
     #[inline]
     #[must_use]
     pub fn min(self, rhs: Self) -> Self {
-        Self {
-            x: if self.x < rhs.x { self.x } else { rhs.x },
-            y: if self.y < rhs.y { self.y } else { rhs.y },
-            z: if self.z < rhs.z { self.z } else { rhs.z },
-            w: if self.w < rhs.w { self.w } else { rhs.w },
+        #[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+        {
+            Self::from_v(unsafe { vmin_u8(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+        {
+            Self::from_v(unsafe { _mm_min_epu8(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(not(all(
+            any(target_arch = "aarch64", target_arch = "x86_64"),
+            not(feature = "scalar-math")
+        )))]
+        {
+            Self {
+                x: if self.x < rhs.x { self.x } else { rhs.x },
+                y: if self.y < rhs.y { self.y } else { rhs.y },
+                z: if self.z < rhs.z { self.z } else { rhs.z },
+                w: if self.w < rhs.w { self.w } else { rhs.w },
+            }
         }
     }
 
@@ -242,11 +289,25 @@ impl U8Vec4 {
     #[inline]
     #[must_use]
     pub fn max(self, rhs: Self) -> Self {
-        Self {
-            x: if self.x > rhs.x { self.x } else { rhs.x },
-            y: if self.y > rhs.y { self.y } else { rhs.y },
-            z: if self.z > rhs.z { self.z } else { rhs.z },
-            w: if self.w > rhs.w { self.w } else { rhs.w },
+        #[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+        {
+            Self::from_v(unsafe { vmax_u8(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+        {
+            Self::from_v(unsafe { _mm_max_epu8(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(not(all(
+            any(target_arch = "aarch64", target_arch = "x86_64"),
+            not(feature = "scalar-math")
+        )))]
+        {
+            Self {
+                x: if self.x > rhs.x { self.x } else { rhs.x },
+                y: if self.y > rhs.y { self.y } else { rhs.y },
+                z: if self.z > rhs.z { self.z } else { rhs.z },
+                w: if self.w > rhs.w { self.w } else { rhs.w },
+            }
         }
     }
 

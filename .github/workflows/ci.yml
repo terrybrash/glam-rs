@@ -45,6 +45,12 @@ jobs:
       - run: cargo test --release --test golden_bits
       - run: cargo test --release --features scalar-math --test golden_bits
       - run: cargo test --release
+      # The debug profile takes a different path. The SIMD bodies of the narrow
+      # integer vectors are gated on `not(debug_assertions)`, thus a debug build
+      # runs the scalar bodies and keeps the overflow panics. Both paths must
+      # give the same stored bit patterns, and only this step proves it.
+      - run: cargo test --test golden_bits
+      - run: cargo test
 
   features:
     name: Test features

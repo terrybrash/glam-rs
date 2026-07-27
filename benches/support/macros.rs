@@ -136,6 +136,125 @@ macro_rules! bench_select {
         }
     };
 }
+// Batched benchmark shapes.
+//
+// The macros above do one operation for each criterion iteration. That shape
+// measures the latency of a single operation, and it hides a difference in
+// throughput, because one operation at a time keeps the processor idle.
+//
+// The macros below run a complete slice through the operation for each
+// criterion iteration. Several vectors stay in flight, thus the shape shows
+// the throughput of the generated code. A narrow integer type that expands
+// into many scalar instructions loses most of its time here. The reported
+// time is the time for the whole slice, not for one operation.
+
+#[macro_export]
+macro_rules! bench_batch_func {
+    ($name: ident, $desc: expr, op => $func: ident, from => $from: expr) => {
+        pub(crate) fn $name(c: &mut Criterion) {
+            const SIZE: usize = 1 << 13;
+            let mut rng = support::PCG32::default();
+            let inputs =
+                core::hint::black_box((0..SIZE).map(|_| $from(&mut rng)).collect::<Vec<_>>());
+            let mut outputs = vec![$func($from(&mut rng)); SIZE];
+            c.bench_function($desc, |b| {
+                b.iter(|| {
+                    for (out, lhs) in outputs.iter_mut().zip(inputs.iter()) {
+                        *out = $func(*lhs);
+                    }
+                    core::hint::black_box(&outputs);
+                })
+            });
+            core::hint::black_box(outputs);
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! bench_batch_unop {
+    ($name: ident, $desc: expr, op => $unop: ident, from => $from: expr) => {
+        pub(crate) fn $name(c: &mut Criterion) {
+            const SIZE: usize = 1 << 13;
+            let mut rng = support::PCG32::default();
+            let inputs =
+                core::hint::black_box((0..SIZE).map(|_| $from(&mut rng)).collect::<Vec<_>>());
+            let mut outputs = vec![$from(&mut rng).$unop(); SIZE];
+            c.bench_function($desc, |b| {
+                b.iter(|| {
+                    for (out, lhs) in outputs.iter_mut().zip(inputs.iter()) {
+                        *out = (*lhs).$unop();
+                    }
+                    core::hint::black_box(&outputs);
+                })
+            });
+            core::hint::black_box(outputs);
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! bench_batch_binop {
+    ($name: ident, $desc: expr, op => $binop: ident, from1 => $from1:expr, from2 => $from2:expr) => {
+        pub(crate) fn $name(c: &mut Criterion) {
+            const SIZE: usize = 1 << 13;
+            let mut rng = support::PCG32::default();
+            let inputs1 =
+                core::hint::black_box((0..SIZE).map(|_| $from1(&mut rng)).collect::<Vec<_>>());
+            let inputs2 =
+                core::hint::black_box((0..SIZE).map(|_| $from2(&mut rng)).collect::<Vec<_>>());
+            let mut outputs = vec![$from1(&mut rng).$binop($from2(&mut rng)); SIZE];
+            c.bench_function($desc, |b| {
+                b.iter(|| {
+                    for ((out, lhs), rhs) in
+                        outputs.iter_mut().zip(inputs1.iter()).zip(inputs2.iter())
+                    {
+                        *out = (*lhs).$binop(*rhs);
+                    }
+                    core::hint::black_box(&outputs);
+                })
+            });
+            core::hint::black_box(outputs);
+        }
+    };
+    ($name: ident, $desc: expr, op => $binop: ident, from => $from: expr) => {
+        bench_batch_binop!($name, $desc, op => $binop, from1 => $from, from2 => $from);
+    };
+}
+
+#[macro_export]
+macro_rules! bench_batch_select {
+    ($name:ident, $desc:expr, ty => $ty: ident, op => $op: ident, from => $from:expr) => {
+        pub(crate) fn $name(c: &mut Criterion) {
+            const SIZE: usize = 1 << 13;
+            let mut rng = support::PCG32::default();
+            let inputs1 =
+                core::hint::black_box((0..SIZE).map(|_| $from(&mut rng)).collect::<Vec<_>>());
+            let inputs2 =
+                core::hint::black_box((0..SIZE).map(|_| $from(&mut rng)).collect::<Vec<_>>());
+            let masks = core::hint::black_box(
+                (0..SIZE)
+                    .map(|_| $from(&mut rng).$op($from(&mut rng)))
+                    .collect::<Vec<_>>(),
+            );
+            let mut outputs = vec![$from(&mut rng); SIZE];
+            c.bench_function($desc, |b| {
+                b.iter(|| {
+                    for (((out, mask), lhs), rhs) in outputs
+                        .iter_mut()
+                        .zip(masks.iter())
+                        .zip(inputs1.iter())
+                        .zip(inputs2.iter())
+                    {
+                        *out = $ty::select(*mask, *lhs, *rhs);
+                    }
+                    core::hint::black_box(&outputs);
+                })
+            });
+            core::hint::black_box(outputs);
+        }
+    };
+}
+
 #[macro_export]
 macro_rules! bench_from_ypr {
     ($name: ident, $desc: expr, ty => $ty:ty) => {

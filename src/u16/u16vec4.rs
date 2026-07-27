@@ -29,6 +29,11 @@ use core::fmt;
 use core::iter::{Product, Sum};
 use core::{f32, ops::*};
 
+#[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+use core::arch::aarch64::*;
+#[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+use core::arch::x86_64::*;
+
 #[cfg(feature = "zerocopy")]
 use zerocopy_derive::*;
 
@@ -102,6 +107,34 @@ impl U16Vec4 {
 
             w: v,
         }
+    }
+
+    #[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+    #[inline(always)]
+    fn to_v(self) -> uint16x4_t {
+        unsafe { vld1_u16((&self as *const Self).cast::<u16>()) }
+    }
+
+    #[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+    #[inline(always)]
+    fn from_v(v: uint16x4_t) -> Self {
+        let mut out = Self::ZERO;
+        unsafe { vst1_u16((&mut out as *mut Self).cast::<u16>(), v) };
+        out
+    }
+
+    #[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+    #[inline(always)]
+    fn to_v(self) -> __m128i {
+        unsafe { _mm_loadl_epi64((&self as *const Self).cast::<__m128i>()) }
+    }
+
+    #[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+    #[inline(always)]
+    fn from_v(v: __m128i) -> Self {
+        let mut out = Self::ZERO;
+        unsafe { _mm_storel_epi64((&mut out as *mut Self).cast::<__m128i>(), v) };
+        out
     }
 
     /// Returns a vector containing each element of `self` modified by a mapping function `f`.
@@ -228,11 +261,25 @@ impl U16Vec4 {
     #[inline]
     #[must_use]
     pub fn min(self, rhs: Self) -> Self {
-        Self {
-            x: if self.x < rhs.x { self.x } else { rhs.x },
-            y: if self.y < rhs.y { self.y } else { rhs.y },
-            z: if self.z < rhs.z { self.z } else { rhs.z },
-            w: if self.w < rhs.w { self.w } else { rhs.w },
+        #[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+        {
+            Self::from_v(unsafe { vmin_u16(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+        {
+            Self::from_v(unsafe { _mm_min_epu16(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(not(all(
+            any(target_arch = "aarch64", target_arch = "x86_64"),
+            not(feature = "scalar-math")
+        )))]
+        {
+            Self {
+                x: if self.x < rhs.x { self.x } else { rhs.x },
+                y: if self.y < rhs.y { self.y } else { rhs.y },
+                z: if self.z < rhs.z { self.z } else { rhs.z },
+                w: if self.w < rhs.w { self.w } else { rhs.w },
+            }
         }
     }
 
@@ -242,11 +289,25 @@ impl U16Vec4 {
     #[inline]
     #[must_use]
     pub fn max(self, rhs: Self) -> Self {
-        Self {
-            x: if self.x > rhs.x { self.x } else { rhs.x },
-            y: if self.y > rhs.y { self.y } else { rhs.y },
-            z: if self.z > rhs.z { self.z } else { rhs.z },
-            w: if self.w > rhs.w { self.w } else { rhs.w },
+        #[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+        {
+            Self::from_v(unsafe { vmax_u16(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+        {
+            Self::from_v(unsafe { _mm_max_epu16(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(not(all(
+            any(target_arch = "aarch64", target_arch = "x86_64"),
+            not(feature = "scalar-math")
+        )))]
+        {
+            Self {
+                x: if self.x > rhs.x { self.x } else { rhs.x },
+                y: if self.y > rhs.y { self.y } else { rhs.y },
+                z: if self.z > rhs.z { self.z } else { rhs.z },
+                w: if self.w > rhs.w { self.w } else { rhs.w },
+            }
         }
     }
 
@@ -998,11 +1059,34 @@ impl Mul for U16Vec4 {
     type Output = Self;
     #[inline]
     fn mul(self, rhs: Self) -> Self {
-        Self {
-            x: self.x.mul(rhs.x),
-            y: self.y.mul(rhs.y),
-            z: self.z.mul(rhs.z),
-            w: self.w.mul(rhs.w),
+        #[cfg(all(
+            target_arch = "aarch64",
+            not(feature = "scalar-math"),
+            not(debug_assertions)
+        ))]
+        {
+            Self::from_v(unsafe { vmul_u16(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(all(
+            target_arch = "x86_64",
+            not(feature = "scalar-math"),
+            not(debug_assertions)
+        ))]
+        {
+            Self::from_v(unsafe { _mm_mullo_epi16(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(not(all(
+            any(target_arch = "aarch64", target_arch = "x86_64"),
+            not(feature = "scalar-math"),
+            not(debug_assertions)
+        )))]
+        {
+            Self {
+                x: self.x.mul(rhs.x),
+                y: self.y.mul(rhs.y),
+                z: self.z.mul(rhs.z),
+                w: self.w.mul(rhs.w),
+            }
         }
     }
 }
@@ -1143,11 +1227,34 @@ impl Add for U16Vec4 {
     type Output = Self;
     #[inline]
     fn add(self, rhs: Self) -> Self {
-        Self {
-            x: self.x.add(rhs.x),
-            y: self.y.add(rhs.y),
-            z: self.z.add(rhs.z),
-            w: self.w.add(rhs.w),
+        #[cfg(all(
+            target_arch = "aarch64",
+            not(feature = "scalar-math"),
+            not(debug_assertions)
+        ))]
+        {
+            Self::from_v(unsafe { vadd_u16(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(all(
+            target_arch = "x86_64",
+            not(feature = "scalar-math"),
+            not(debug_assertions)
+        ))]
+        {
+            Self::from_v(unsafe { _mm_add_epi16(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(not(all(
+            any(target_arch = "aarch64", target_arch = "x86_64"),
+            not(feature = "scalar-math"),
+            not(debug_assertions)
+        )))]
+        {
+            Self {
+                x: self.x.add(rhs.x),
+                y: self.y.add(rhs.y),
+                z: self.z.add(rhs.z),
+                w: self.w.add(rhs.w),
+            }
         }
     }
 }
@@ -1288,11 +1395,34 @@ impl Sub for U16Vec4 {
     type Output = Self;
     #[inline]
     fn sub(self, rhs: Self) -> Self {
-        Self {
-            x: self.x.sub(rhs.x),
-            y: self.y.sub(rhs.y),
-            z: self.z.sub(rhs.z),
-            w: self.w.sub(rhs.w),
+        #[cfg(all(
+            target_arch = "aarch64",
+            not(feature = "scalar-math"),
+            not(debug_assertions)
+        ))]
+        {
+            Self::from_v(unsafe { vsub_u16(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(all(
+            target_arch = "x86_64",
+            not(feature = "scalar-math"),
+            not(debug_assertions)
+        ))]
+        {
+            Self::from_v(unsafe { _mm_sub_epi16(self.to_v(), rhs.to_v()) })
+        }
+        #[cfg(not(all(
+            any(target_arch = "aarch64", target_arch = "x86_64"),
+            not(feature = "scalar-math"),
+            not(debug_assertions)
+        )))]
+        {
+            Self {
+                x: self.x.sub(rhs.x),
+                y: self.y.sub(rhs.y),
+                z: self.z.sub(rhs.z),
+                w: self.w.sub(rhs.w),
+            }
         }
     }
 }

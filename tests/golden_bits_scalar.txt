@@ -66,3 +66,1359 @@ affine.transform_vector3a        be59c54b 3e85cd7b 3ea22222
 --- camera ---
 perspective_rh_gl                3f9bdee5 00000000 00000000 00000000 00000000 40047d76 00000000 00000000 00000000 00000000 bf80068d bf800000 00000000 00000000 be4cd20a 00000000
 look_at_rh                       3f72dce9 be2d166d 3e88d677 00000000 00000000 3f585c08 3f08d677 00000000 bea1e89c bf01d0d1 3f4d41b2 00000000 33800000 80000000 c06f7750 3f800000
+--- i8vec2 ---
+i8vec2.add                       08 fb
+i8vec2.sub                       fe f7
+i8vec2.mul                       0f f2
+i8vec2.min                       03 f9
+i8vec2.max                       05 02
+i8vec2.clamp                     03 fc
+i8vec2.cmpeq                     00
+i8vec2.cmpne                     03
+i8vec2.cmplt                     03
+i8vec2.cmple                     03
+i8vec2.cmpgt                     00
+i8vec2.cmpge                     00
+i8vec2.select                    03 f9
+i8vec2.bitand                    01 00
+i8vec2.bitor                     07 fb
+i8vec2.bitxor                    06 fb
+i8vec2.not                       fc 06
+i8vec2.dot                       01
+i8vec2.element_sum               fc
+i8vec2.element_product           fa
+i8vec2.min_element               f9
+i8vec2.max_element               03
+i8vec2.wrapping_add hi+one       80 80
+i8vec2.wrapping_add hi+hi        fe fe
+i8vec2.wrapping_sub lo-one       7f 7f
+i8vec2.wrapping_sub lo-hi        01 01
+i8vec2.wrapping_mul hi*hi        01 01
+i8vec2.wrapping_mul lo*lo        00 00
+i8vec2.wrapping_mul hi*lo        80 80
+i8vec2.saturating_add hi+one     7f 7f
+i8vec2.saturating_add hi+hi      7f 7f
+i8vec2.saturating_add lo+lo      80 80
+i8vec2.saturating_sub lo-one     80 80
+i8vec2.saturating_sub lo-hi      80 80
+i8vec2.saturating_sub hi-lo      7f 7f
+i8vec2.div                       fd fd
+i8vec2.rem                       ff 01
+i8vec2.shl 1                     06 f2
+i8vec2.shl 3                     18 c8
+i8vec2.shr 1                     01 fc
+i8vec2.shr 3                     00 ff
+i8vec2.abs                       05 00
+i8vec2.signum                    ff 00
+i8vec2.shr neg 1                 e0 ff
+i8vec2.shr neg 3                 f8 ff
+i8vec2.shl neg 2                 00 fc
+i8vec2.not neg                   3f 00
+i8vec2.is_negative               03
+i8vec2.sb.cmpeq                  00
+i8vec2.sb.cmpne                  03
+i8vec2.sb.cmplt                  02
+i8vec2.sb.cmple                  02
+i8vec2.sb.cmpgt                  01
+i8vec2.sb.cmpge                  01
+i8vec2.sb.min                    ff ff
+i8vec2.sb.max                    7f 7f
+i8vec2.sb.select                 7f 7f
+--- i8vec3 ---
+i8vec3.add                       08 fb f9
+i8vec3.sub                       fe f7 0b
+i8vec3.mul                       0f f2 ee
+i8vec3.min                       03 f9 f7
+i8vec3.max                       05 02 02
+i8vec3.clamp                     03 fc 02
+i8vec3.cmpeq                     00
+i8vec3.cmpne                     07
+i8vec3.cmplt                     03
+i8vec3.cmple                     03
+i8vec3.cmpgt                     04
+i8vec3.cmpge                     04
+i8vec3.select                    03 f9 f7
+i8vec3.bitand                    01 00 02
+i8vec3.bitor                     07 fb f7
+i8vec3.bitxor                    06 fb f5
+i8vec3.not                       fc 06 fd
+i8vec3.dot                       ef
+i8vec3.element_sum               fe
+i8vec3.element_product           fa
+i8vec3.min_element               f9
+i8vec3.max_element               03
+i8vec3.wrapping_add hi+one       80 80 80
+i8vec3.wrapping_add hi+hi        fe fe fe
+i8vec3.wrapping_sub lo-one       7f 7f 7f
+i8vec3.wrapping_sub lo-hi        01 01 01
+i8vec3.wrapping_mul hi*hi        01 01 01
+i8vec3.wrapping_mul lo*lo        00 00 00
+i8vec3.wrapping_mul hi*lo        80 80 80
+i8vec3.saturating_add hi+one     7f 7f 7f
+i8vec3.saturating_add hi+hi      7f 7f 7f
+i8vec3.saturating_add lo+lo      80 80 80
+i8vec3.saturating_sub lo-one     80 80 80
+i8vec3.saturating_sub lo-hi      80 80 80
+i8vec3.saturating_sub hi-lo      7f 7f 7f
+i8vec3.div                       fd fd fe
+i8vec3.rem                       ff 01 fe
+i8vec3.shl 1                     06 f2 04
+i8vec3.shl 3                     18 c8 10
+i8vec3.shr 1                     01 fc 01
+i8vec3.shr 3                     00 ff 00
+i8vec3.abs                       05 00 09
+i8vec3.signum                    ff 00 01
+i8vec3.shr neg 1                 e0 ff 0c
+i8vec3.shr neg 3                 f8 ff 03
+i8vec3.shl neg 2                 00 fc 64
+i8vec3.not neg                   3f 00 e6
+i8vec3.is_negative               03
+i8vec3.sb.cmpeq                  00
+i8vec3.sb.cmpne                  07
+i8vec3.sb.cmplt                  06
+i8vec3.sb.cmple                  06
+i8vec3.sb.cmpgt                  01
+i8vec3.sb.cmpge                  01
+i8vec3.sb.min                    ff ff 80
+i8vec3.sb.max                    7f 7f 00
+i8vec3.sb.select                 7f 7f 00
+--- i8vec4 ---
+i8vec4.add                       08 fb f9 f9
+i8vec4.sub                       fe f7 0b f1
+i8vec4.mul                       0f f2 ee d4
+i8vec4.min                       03 f9 f7 f5
+i8vec4.max                       05 02 02 04
+i8vec4.clamp                     03 fc 02 fc
+i8vec4.cmpeq                     00
+i8vec4.cmpne                     0f
+i8vec4.cmplt                     0b
+i8vec4.cmple                     0b
+i8vec4.cmpgt                     04
+i8vec4.cmpge                     04
+i8vec4.select                    03 f9 f7 f5
+i8vec4.bitand                    01 00 02 04
+i8vec4.bitor                     07 fb f7 f5
+i8vec4.bitxor                    06 fb f5 f1
+i8vec4.not                       fc 06 fd 0a
+i8vec4.dot                       c3
+i8vec4.element_sum               f3
+i8vec4.element_product           0c
+i8vec4.min_element               f5
+i8vec4.max_element               03
+i8vec4.wrapping_add hi+one       80 80 80 80
+i8vec4.wrapping_add hi+hi        fe fe fe fe
+i8vec4.wrapping_sub lo-one       7f 7f 7f 7f
+i8vec4.wrapping_sub lo-hi        01 01 01 01
+i8vec4.wrapping_mul hi*hi        01 01 01 01
+i8vec4.wrapping_mul lo*lo        00 00 00 00
+i8vec4.wrapping_mul hi*lo        80 80 80 80
+i8vec4.saturating_add hi+one     7f 7f 7f 7f
+i8vec4.saturating_add hi+hi      7f 7f 7f 7f
+i8vec4.saturating_add lo+lo      80 80 80 80
+i8vec4.saturating_sub lo-one     80 80 80 80
+i8vec4.saturating_sub lo-hi      80 80 80 80
+i8vec4.saturating_sub hi-lo      7f 7f 7f 7f
+i8vec4.div                       fd fd fe fe
+i8vec4.rem                       ff 01 fe 01
+i8vec4.shl 1                     06 f2 04 ea
+i8vec4.shl 3                     18 c8 10 a8
+i8vec4.shr 1                     01 fc 01 fa
+i8vec4.shr 3                     00 ff 00 fe
+i8vec4.abs                       05 00 09 01
+i8vec4.signum                    ff 00 01 ff
+i8vec4.shr neg 1                 e0 ff 0c fc
+i8vec4.shr neg 3                 f8 ff 03 ff
+i8vec4.shl neg 2                 00 fc 64 e4
+i8vec4.not neg                   3f 00 e6 06
+i8vec4.is_negative               0b
+i8vec4.sb.cmpeq                  00
+i8vec4.sb.cmpne                  0f
+i8vec4.sb.cmplt                  06
+i8vec4.sb.cmple                  06
+i8vec4.sb.cmpgt                  09
+i8vec4.sb.cmpge                  09
+i8vec4.sb.min                    ff ff 80 80
+i8vec4.sb.max                    7f 7f 00 00
+i8vec4.sb.select                 7f 7f 00 00
+--- u8vec2 ---
+u8vec2.add                       0e 09
+u8vec2.sub                       08 05
+u8vec2.mul                       21 0e
+u8vec2.min                       03 02
+u8vec2.max                       0b 07
+u8vec2.clamp                     09 07
+u8vec2.cmpeq                     00
+u8vec2.cmpne                     03
+u8vec2.cmplt                     00
+u8vec2.cmple                     00
+u8vec2.cmpgt                     03
+u8vec2.cmpge                     03
+u8vec2.select                    03 02
+u8vec2.bitand                    03 02
+u8vec2.bitor                     0b 07
+u8vec2.bitxor                    08 05
+u8vec2.not                       f4 f8
+u8vec2.dot                       2f
+u8vec2.element_sum               12
+u8vec2.element_product           06
+u8vec2.min_element               07
+u8vec2.max_element               0b
+u8vec2.wrapping_add hi+one       00 00
+u8vec2.wrapping_add hi+hi        fe fe
+u8vec2.wrapping_sub lo-one       ff ff
+u8vec2.wrapping_sub lo-hi        01 01
+u8vec2.wrapping_mul hi*hi        01 01
+u8vec2.wrapping_mul lo*lo        00 00
+u8vec2.wrapping_mul hi*lo        00 00
+u8vec2.saturating_add hi+one     ff ff
+u8vec2.saturating_add hi+hi      ff ff
+u8vec2.saturating_add lo+lo      00 00
+u8vec2.saturating_sub lo-one     00 00
+u8vec2.saturating_sub lo-hi      00 00
+u8vec2.saturating_sub hi-lo      ff ff
+u8vec2.div                       03 02
+u8vec2.rem                       01 01
+u8vec2.shl 1                     16 0e
+u8vec2.shl 3                     58 38
+u8vec2.shr 1                     05 03
+u8vec2.shr 3                     01 00
+u8vec2.hb.cmpeq                  00
+u8vec2.hb.cmpne                  03
+u8vec2.hb.cmplt                  02
+u8vec2.hb.cmple                  02
+u8vec2.hb.cmpgt                  01
+u8vec2.hb.cmpge                  01
+u8vec2.hb.cmpge mid              01
+u8vec2.hb.min                    01 01
+u8vec2.hb.max                    ff ff
+u8vec2.hb.clamp                  80 01
+u8vec2.hb.select                 ff ff
+u8vec2.hb.shr 1                  7f 00
+u8vec2.hb.shr 4                  0f 00
+--- u8vec3 ---
+u8vec3.add                       0e 09 0d
+u8vec3.sub                       08 05 05
+u8vec3.mul                       21 0e 24
+u8vec3.min                       03 02 04
+u8vec3.max                       0b 07 09
+u8vec3.clamp                     09 07 09
+u8vec3.cmpeq                     00
+u8vec3.cmpne                     07
+u8vec3.cmplt                     00
+u8vec3.cmple                     00
+u8vec3.cmpgt                     07
+u8vec3.cmpge                     07
+u8vec3.select                    03 02 04
+u8vec3.bitand                    03 02 00
+u8vec3.bitor                     0b 07 0d
+u8vec3.bitxor                    08 05 0d
+u8vec3.not                       f4 f8 f6
+u8vec3.dot                       53
+u8vec3.element_sum               1b
+u8vec3.element_product           06
+u8vec3.min_element               07
+u8vec3.max_element               0b
+u8vec3.wrapping_add hi+one       00 00 00
+u8vec3.wrapping_add hi+hi        fe fe fe
+u8vec3.wrapping_sub lo-one       ff ff ff
+u8vec3.wrapping_sub lo-hi        01 01 01
+u8vec3.wrapping_mul hi*hi        01 01 01
+u8vec3.wrapping_mul lo*lo        00 00 00
+u8vec3.wrapping_mul hi*lo        00 00 00
+u8vec3.saturating_add hi+one     ff ff ff
+u8vec3.saturating_add hi+hi      ff ff ff
+u8vec3.saturating_add lo+lo      00 00 00
+u8vec3.saturating_sub lo-one     00 00 00
+u8vec3.saturating_sub lo-hi      00 00 00
+u8vec3.saturating_sub hi-lo      ff ff ff
+u8vec3.div                       03 02 02
+u8vec3.rem                       01 01 02
+u8vec3.shl 1                     16 0e 12
+u8vec3.shl 3                     58 38 48
+u8vec3.shr 1                     05 03 04
+u8vec3.shr 3                     01 00 01
+u8vec3.hb.cmpeq                  00
+u8vec3.hb.cmpne                  07
+u8vec3.hb.cmplt                  02
+u8vec3.hb.cmple                  02
+u8vec3.hb.cmpgt                  05
+u8vec3.hb.cmpge                  05
+u8vec3.hb.cmpge mid              05
+u8vec3.hb.min                    01 01 7f
+u8vec3.hb.max                    ff ff 80
+u8vec3.hb.clamp                  80 01 80
+u8vec3.hb.select                 ff ff 80
+u8vec3.hb.shr 1                  7f 00 40
+u8vec3.hb.shr 4                  0f 00 08
+--- u8vec4 ---
+u8vec4.add                       0e 09 0d 06
+u8vec4.sub                       08 05 05 04
+u8vec4.mul                       21 0e 24 05
+u8vec4.min                       03 02 04 01
+u8vec4.max                       0b 07 09 05
+u8vec4.clamp                     09 07 09 05
+u8vec4.cmpeq                     00
+u8vec4.cmpne                     0f
+u8vec4.cmplt                     00
+u8vec4.cmple                     00
+u8vec4.cmpgt                     0f
+u8vec4.cmpge                     0f
+u8vec4.select                    03 02 04 01
+u8vec4.bitand                    03 02 00 01
+u8vec4.bitor                     0b 07 0d 05
+u8vec4.bitxor                    08 05 0d 04
+u8vec4.not                       f4 f8 f6 fa
+u8vec4.dot                       58
+u8vec4.element_sum               20
+u8vec4.element_product           0c
+u8vec4.min_element               05
+u8vec4.max_element               0b
+u8vec4.wrapping_add hi+one       00 00 00 00
+u8vec4.wrapping_add hi+hi        fe fe fe fe
+u8vec4.wrapping_sub lo-one       ff ff ff ff
+u8vec4.wrapping_sub lo-hi        01 01 01 01
+u8vec4.wrapping_mul hi*hi        01 01 01 01
+u8vec4.wrapping_mul lo*lo        00 00 00 00
+u8vec4.wrapping_mul hi*lo        00 00 00 00
+u8vec4.saturating_add hi+one     ff ff ff ff
+u8vec4.saturating_add hi+hi      ff ff ff ff
+u8vec4.saturating_add lo+lo      00 00 00 00
+u8vec4.saturating_sub lo-one     00 00 00 00
+u8vec4.saturating_sub lo-hi      00 00 00 00
+u8vec4.saturating_sub hi-lo      ff ff ff ff
+u8vec4.div                       03 02 02 02
+u8vec4.rem                       01 01 02 01
+u8vec4.shl 1                     16 0e 12 0a
+u8vec4.shl 3                     58 38 48 28
+u8vec4.shr 1                     05 03 04 02
+u8vec4.shr 3                     01 00 01 00
+u8vec4.hb.cmpeq                  00
+u8vec4.hb.cmpne                  0f
+u8vec4.hb.cmplt                  0a
+u8vec4.hb.cmple                  0a
+u8vec4.hb.cmpgt                  05
+u8vec4.hb.cmpge                  05
+u8vec4.hb.cmpge mid              05
+u8vec4.hb.min                    01 01 7f 7f
+u8vec4.hb.max                    ff ff 80 80
+u8vec4.hb.clamp                  80 01 80 7f
+u8vec4.hb.select                 ff ff 80 80
+u8vec4.hb.shr 1                  7f 00 40 3f
+u8vec4.hb.shr 4                  0f 00 08 07
+--- i16vec2 ---
+i16vec2.add                      0008 fffb
+i16vec2.sub                      fffe fff7
+i16vec2.mul                      000f fff2
+i16vec2.min                      0003 fff9
+i16vec2.max                      0005 0002
+i16vec2.clamp                    0003 fffc
+i16vec2.cmpeq                    00
+i16vec2.cmpne                    03
+i16vec2.cmplt                    03
+i16vec2.cmple                    03
+i16vec2.cmpgt                    00
+i16vec2.cmpge                    00
+i16vec2.select                   0003 fff9
+i16vec2.bitand                   0001 0000
+i16vec2.bitor                    0007 fffb
+i16vec2.bitxor                   0006 fffb
+i16vec2.not                      fffc 0006
+i16vec2.dot                      0001
+i16vec2.element_sum              fffc
+i16vec2.element_product          fffa
+i16vec2.min_element              fff9
+i16vec2.max_element              0003
+i16vec2.wrapping_add hi+one      8000 8000
+i16vec2.wrapping_add hi+hi       fffe fffe
+i16vec2.wrapping_sub lo-one      7fff 7fff
+i16vec2.wrapping_sub lo-hi       0001 0001
+i16vec2.wrapping_mul hi*hi       0001 0001
+i16vec2.wrapping_mul lo*lo       0000 0000
+i16vec2.wrapping_mul hi*lo       8000 8000
+i16vec2.saturating_add hi+one    7fff 7fff
+i16vec2.saturating_add hi+hi     7fff 7fff
+i16vec2.saturating_add lo+lo     8000 8000
+i16vec2.saturating_sub lo-one    8000 8000
+i16vec2.saturating_sub lo-hi     8000 8000
+i16vec2.saturating_sub hi-lo     7fff 7fff
+i16vec2.div                      fffd fffd
+i16vec2.rem                      ffff 0001
+i16vec2.shl 1                    0006 fff2
+i16vec2.shl 3                    0018 ffc8
+i16vec2.shr 1                    0001 fffc
+i16vec2.shr 3                    0000 ffff
+i16vec2.abs                      0005 0000
+i16vec2.signum                   ffff 0000
+i16vec2.shr neg 1                ffe0 ffff
+i16vec2.shr neg 3                fff8 ffff
+i16vec2.shl neg 2                ff00 fffc
+i16vec2.not neg                  003f 0000
+i16vec2.is_negative              03
+i16vec2.sb.cmpeq                 00
+i16vec2.sb.cmpne                 03
+i16vec2.sb.cmplt                 02
+i16vec2.sb.cmple                 02
+i16vec2.sb.cmpgt                 01
+i16vec2.sb.cmpge                 01
+i16vec2.sb.min                   ffff ffff
+i16vec2.sb.max                   7fff 7fff
+i16vec2.sb.select                7fff 7fff
+--- i16vec3 ---
+i16vec3.add                      0008 fffb fff9
+i16vec3.sub                      fffe fff7 000b
+i16vec3.mul                      000f fff2 ffee
+i16vec3.min                      0003 fff9 fff7
+i16vec3.max                      0005 0002 0002
+i16vec3.clamp                    0003 fffc 0002
+i16vec3.cmpeq                    00
+i16vec3.cmpne                    07
+i16vec3.cmplt                    03
+i16vec3.cmple                    03
+i16vec3.cmpgt                    04
+i16vec3.cmpge                    04
+i16vec3.select                   0003 fff9 fff7
+i16vec3.bitand                   0001 0000 0002
+i16vec3.bitor                    0007 fffb fff7
+i16vec3.bitxor                   0006 fffb fff5
+i16vec3.not                      fffc 0006 fffd
+i16vec3.dot                      ffef
+i16vec3.element_sum              fffe
+i16vec3.element_product          fffa
+i16vec3.min_element              fff9
+i16vec3.max_element              0003
+i16vec3.wrapping_add hi+one      8000 8000 8000
+i16vec3.wrapping_add hi+hi       fffe fffe fffe
+i16vec3.wrapping_sub lo-one      7fff 7fff 7fff
+i16vec3.wrapping_sub lo-hi       0001 0001 0001
+i16vec3.wrapping_mul hi*hi       0001 0001 0001
+i16vec3.wrapping_mul lo*lo       0000 0000 0000
+i16vec3.wrapping_mul hi*lo       8000 8000 8000
+i16vec3.saturating_add hi+one    7fff 7fff 7fff
+i16vec3.saturating_add hi+hi     7fff 7fff 7fff
+i16vec3.saturating_add lo+lo     8000 8000 8000
+i16vec3.saturating_sub lo-one    8000 8000 8000
+i16vec3.saturating_sub lo-hi     8000 8000 8000
+i16vec3.saturating_sub hi-lo     7fff 7fff 7fff
+i16vec3.div                      fffd fffd fffe
+i16vec3.rem                      ffff 0001 fffe
+i16vec3.shl 1                    0006 fff2 0004
+i16vec3.shl 3                    0018 ffc8 0010
+i16vec3.shr 1                    0001 fffc 0001
+i16vec3.shr 3                    0000 ffff 0000
+i16vec3.abs                      0005 0000 0009
+i16vec3.signum                   ffff 0000 0001
+i16vec3.shr neg 1                ffe0 ffff 000c
+i16vec3.shr neg 3                fff8 ffff 0003
+i16vec3.shl neg 2                ff00 fffc 0064
+i16vec3.not neg                  003f 0000 ffe6
+i16vec3.is_negative              03
+i16vec3.sb.cmpeq                 00
+i16vec3.sb.cmpne                 07
+i16vec3.sb.cmplt                 06
+i16vec3.sb.cmple                 06
+i16vec3.sb.cmpgt                 01
+i16vec3.sb.cmpge                 01
+i16vec3.sb.min                   ffff ffff 8000
+i16vec3.sb.max                   7fff 7fff 0000
+i16vec3.sb.select                7fff 7fff 0000
+--- i16vec4 ---
+i16vec4.add                      0008 fffb fff9 fff9
+i16vec4.sub                      fffe fff7 000b fff1
+i16vec4.mul                      000f fff2 ffee ffd4
+i16vec4.min                      0003 fff9 fff7 fff5
+i16vec4.max                      0005 0002 0002 0004
+i16vec4.clamp                    0003 fffc 0002 fffc
+i16vec4.cmpeq                    00
+i16vec4.cmpne                    0f
+i16vec4.cmplt                    0b
+i16vec4.cmple                    0b
+i16vec4.cmpgt                    04
+i16vec4.cmpge                    04
+i16vec4.select                   0003 fff9 fff7 fff5
+i16vec4.bitand                   0001 0000 0002 0004
+i16vec4.bitor                    0007 fffb fff7 fff5
+i16vec4.bitxor                   0006 fffb fff5 fff1
+i16vec4.not                      fffc 0006 fffd 000a
+i16vec4.dot                      ffc3
+i16vec4.element_sum              fff3
+i16vec4.element_product          000c
+i16vec4.min_element              fff5
+i16vec4.max_element              0003
+i16vec4.wrapping_add hi+one      8000 8000 8000 8000
+i16vec4.wrapping_add hi+hi       fffe fffe fffe fffe
+i16vec4.wrapping_sub lo-one      7fff 7fff 7fff 7fff
+i16vec4.wrapping_sub lo-hi       0001 0001 0001 0001
+i16vec4.wrapping_mul hi*hi       0001 0001 0001 0001
+i16vec4.wrapping_mul lo*lo       0000 0000 0000 0000
+i16vec4.wrapping_mul hi*lo       8000 8000 8000 8000
+i16vec4.saturating_add hi+one    7fff 7fff 7fff 7fff
+i16vec4.saturating_add hi+hi     7fff 7fff 7fff 7fff
+i16vec4.saturating_add lo+lo     8000 8000 8000 8000
+i16vec4.saturating_sub lo-one    8000 8000 8000 8000
+i16vec4.saturating_sub lo-hi     8000 8000 8000 8000
+i16vec4.saturating_sub hi-lo     7fff 7fff 7fff 7fff
+i16vec4.div                      fffd fffd fffe fffe
+i16vec4.rem                      ffff 0001 fffe 0001
+i16vec4.shl 1                    0006 fff2 0004 ffea
+i16vec4.shl 3                    0018 ffc8 0010 ffa8
+i16vec4.shr 1                    0001 fffc 0001 fffa
+i16vec4.shr 3                    0000 ffff 0000 fffe
+i16vec4.abs                      0005 0000 0009 0001
+i16vec4.signum                   ffff 0000 0001 ffff
+i16vec4.shr neg 1                ffe0 ffff 000c fffc
+i16vec4.shr neg 3                fff8 ffff 0003 ffff
+i16vec4.shl neg 2                ff00 fffc 0064 ffe4
+i16vec4.not neg                  003f 0000 ffe6 0006
+i16vec4.is_negative              0b
+i16vec4.sb.cmpeq                 00
+i16vec4.sb.cmpne                 0f
+i16vec4.sb.cmplt                 06
+i16vec4.sb.cmple                 06
+i16vec4.sb.cmpgt                 09
+i16vec4.sb.cmpge                 09
+i16vec4.sb.min                   ffff ffff 8000 8000
+i16vec4.sb.max                   7fff 7fff 0000 0000
+i16vec4.sb.select                7fff 7fff 0000 0000
+--- u16vec2 ---
+u16vec2.add                      000e 0009
+u16vec2.sub                      0008 0005
+u16vec2.mul                      0021 000e
+u16vec2.min                      0003 0002
+u16vec2.max                      000b 0007
+u16vec2.clamp                    0009 0007
+u16vec2.cmpeq                    00
+u16vec2.cmpne                    03
+u16vec2.cmplt                    00
+u16vec2.cmple                    00
+u16vec2.cmpgt                    03
+u16vec2.cmpge                    03
+u16vec2.select                   0003 0002
+u16vec2.bitand                   0003 0002
+u16vec2.bitor                    000b 0007
+u16vec2.bitxor                   0008 0005
+u16vec2.not                      fff4 fff8
+u16vec2.dot                      002f
+u16vec2.element_sum              0012
+u16vec2.element_product          0006
+u16vec2.min_element              0007
+u16vec2.max_element              000b
+u16vec2.wrapping_add hi+one      0000 0000
+u16vec2.wrapping_add hi+hi       fffe fffe
+u16vec2.wrapping_sub lo-one      ffff ffff
+u16vec2.wrapping_sub lo-hi       0001 0001
+u16vec2.wrapping_mul hi*hi       0001 0001
+u16vec2.wrapping_mul lo*lo       0000 0000
+u16vec2.wrapping_mul hi*lo       0000 0000
+u16vec2.saturating_add hi+one    ffff ffff
+u16vec2.saturating_add hi+hi     ffff ffff
+u16vec2.saturating_add lo+lo     0000 0000
+u16vec2.saturating_sub lo-one    0000 0000
+u16vec2.saturating_sub lo-hi     0000 0000
+u16vec2.saturating_sub hi-lo     ffff ffff
+u16vec2.div                      0003 0002
+u16vec2.rem                      0001 0001
+u16vec2.shl 1                    0016 000e
+u16vec2.shl 3                    0058 0038
+u16vec2.shr 1                    0005 0003
+u16vec2.shr 3                    0001 0000
+u16vec2.hb.cmpeq                 00
+u16vec2.hb.cmpne                 03
+u16vec2.hb.cmplt                 02
+u16vec2.hb.cmple                 02
+u16vec2.hb.cmpgt                 01
+u16vec2.hb.cmpge                 01
+u16vec2.hb.cmpge mid             01
+u16vec2.hb.min                   0001 0001
+u16vec2.hb.max                   ffff ffff
+u16vec2.hb.clamp                 8000 0001
+u16vec2.hb.select                ffff ffff
+u16vec2.hb.shr 1                 7fff 0000
+u16vec2.hb.shr 4                 0fff 0000
+--- u16vec3 ---
+u16vec3.add                      000e 0009 000d
+u16vec3.sub                      0008 0005 0005
+u16vec3.mul                      0021 000e 0024
+u16vec3.min                      0003 0002 0004
+u16vec3.max                      000b 0007 0009
+u16vec3.clamp                    0009 0007 0009
+u16vec3.cmpeq                    00
+u16vec3.cmpne                    07
+u16vec3.cmplt                    00
+u16vec3.cmple                    00
+u16vec3.cmpgt                    07
+u16vec3.cmpge                    07
+u16vec3.select                   0003 0002 0004
+u16vec3.bitand                   0003 0002 0000
+u16vec3.bitor                    000b 0007 000d
+u16vec3.bitxor                   0008 0005 000d
+u16vec3.not                      fff4 fff8 fff6
+u16vec3.dot                      0053
+u16vec3.element_sum              001b
+u16vec3.element_product          0006
+u16vec3.min_element              0007
+u16vec3.max_element              000b
+u16vec3.wrapping_add hi+one      0000 0000 0000
+u16vec3.wrapping_add hi+hi       fffe fffe fffe
+u16vec3.wrapping_sub lo-one      ffff ffff ffff
+u16vec3.wrapping_sub lo-hi       0001 0001 0001
+u16vec3.wrapping_mul hi*hi       0001 0001 0001
+u16vec3.wrapping_mul lo*lo       0000 0000 0000
+u16vec3.wrapping_mul hi*lo       0000 0000 0000
+u16vec3.saturating_add hi+one    ffff ffff ffff
+u16vec3.saturating_add hi+hi     ffff ffff ffff
+u16vec3.saturating_add lo+lo     0000 0000 0000
+u16vec3.saturating_sub lo-one    0000 0000 0000
+u16vec3.saturating_sub lo-hi     0000 0000 0000
+u16vec3.saturating_sub hi-lo     ffff ffff ffff
+u16vec3.div                      0003 0002 0002
+u16vec3.rem                      0001 0001 0002
+u16vec3.shl 1                    0016 000e 0012
+u16vec3.shl 3                    0058 0038 0048
+u16vec3.shr 1                    0005 0003 0004
+u16vec3.shr 3                    0001 0000 0001
+u16vec3.hb.cmpeq                 00
+u16vec3.hb.cmpne                 07
+u16vec3.hb.cmplt                 02
+u16vec3.hb.cmple                 02
+u16vec3.hb.cmpgt                 05
+u16vec3.hb.cmpge                 05
+u16vec3.hb.cmpge mid             05
+u16vec3.hb.min                   0001 0001 7fff
+u16vec3.hb.max                   ffff ffff 8000
+u16vec3.hb.clamp                 8000 0001 8000
+u16vec3.hb.select                ffff ffff 8000
+u16vec3.hb.shr 1                 7fff 0000 4000
+u16vec3.hb.shr 4                 0fff 0000 0800
+--- u16vec4 ---
+u16vec4.add                      000e 0009 000d 0006
+u16vec4.sub                      0008 0005 0005 0004
+u16vec4.mul                      0021 000e 0024 0005
+u16vec4.min                      0003 0002 0004 0001
+u16vec4.max                      000b 0007 0009 0005
+u16vec4.clamp                    0009 0007 0009 0005
+u16vec4.cmpeq                    00
+u16vec4.cmpne                    0f
+u16vec4.cmplt                    00
+u16vec4.cmple                    00
+u16vec4.cmpgt                    0f
+u16vec4.cmpge                    0f
+u16vec4.select                   0003 0002 0004 0001
+u16vec4.bitand                   0003 0002 0000 0001
+u16vec4.bitor                    000b 0007 000d 0005
+u16vec4.bitxor                   0008 0005 000d 0004
+u16vec4.not                      fff4 fff8 fff6 fffa
+u16vec4.dot                      0058
+u16vec4.element_sum              0020
+u16vec4.element_product          000c
+u16vec4.min_element              0005
+u16vec4.max_element              000b
+u16vec4.wrapping_add hi+one      0000 0000 0000 0000
+u16vec4.wrapping_add hi+hi       fffe fffe fffe fffe
+u16vec4.wrapping_sub lo-one      ffff ffff ffff ffff
+u16vec4.wrapping_sub lo-hi       0001 0001 0001 0001
+u16vec4.wrapping_mul hi*hi       0001 0001 0001 0001
+u16vec4.wrapping_mul lo*lo       0000 0000 0000 0000
+u16vec4.wrapping_mul hi*lo       0000 0000 0000 0000
+u16vec4.saturating_add hi+one    ffff ffff ffff ffff
+u16vec4.saturating_add hi+hi     ffff ffff ffff ffff
+u16vec4.saturating_add lo+lo     0000 0000 0000 0000
+u16vec4.saturating_sub lo-one    0000 0000 0000 0000
+u16vec4.saturating_sub lo-hi     0000 0000 0000 0000
+u16vec4.saturating_sub hi-lo     ffff ffff ffff ffff
+u16vec4.div                      0003 0002 0002 0002
+u16vec4.rem                      0001 0001 0002 0001
+u16vec4.shl 1                    0016 000e 0012 000a
+u16vec4.shl 3                    0058 0038 0048 0028
+u16vec4.shr 1                    0005 0003 0004 0002
+u16vec4.shr 3                    0001 0000 0001 0000
+u16vec4.hb.cmpeq                 00
+u16vec4.hb.cmpne                 0f
+u16vec4.hb.cmplt                 0a
+u16vec4.hb.cmple                 0a
+u16vec4.hb.cmpgt                 05
+u16vec4.hb.cmpge                 05
+u16vec4.hb.cmpge mid             05
+u16vec4.hb.min                   0001 0001 7fff 7fff
+u16vec4.hb.max                   ffff ffff 8000 8000
+u16vec4.hb.clamp                 8000 0001 8000 7fff
+u16vec4.hb.select                ffff ffff 8000 8000
+u16vec4.hb.shr 1                 7fff 0000 4000 3fff
+u16vec4.hb.shr 4                 0fff 0000 0800 07ff
+--- ivec2 ---
+ivec2.add                        00000008 fffffffb
+ivec2.sub                        fffffffe fffffff7
+ivec2.mul                        0000000f fffffff2
+ivec2.min                        00000003 fffffff9
+ivec2.max                        00000005 00000002
+ivec2.clamp                      00000003 fffffffc
+ivec2.cmpeq                      00
+ivec2.cmpne                      03
+ivec2.cmplt                      03
+ivec2.cmple                      03
+ivec2.cmpgt                      00
+ivec2.cmpge                      00
+ivec2.select                     00000003 fffffff9
+ivec2.bitand                     00000001 00000000
+ivec2.bitor                      00000007 fffffffb
+ivec2.bitxor                     00000006 fffffffb
+ivec2.not                        fffffffc 00000006
+ivec2.dot                        00000001
+ivec2.element_sum                fffffffc
+ivec2.element_product            fffffffa
+ivec2.min_element                fffffff9
+ivec2.max_element                00000003
+ivec2.wrapping_add hi+one        80000000 80000000
+ivec2.wrapping_add hi+hi         fffffffe fffffffe
+ivec2.wrapping_sub lo-one        7fffffff 7fffffff
+ivec2.wrapping_sub lo-hi         00000001 00000001
+ivec2.wrapping_mul hi*hi         00000001 00000001
+ivec2.wrapping_mul lo*lo         00000000 00000000
+ivec2.wrapping_mul hi*lo         80000000 80000000
+ivec2.saturating_add hi+one      7fffffff 7fffffff
+ivec2.saturating_add hi+hi       7fffffff 7fffffff
+ivec2.saturating_add lo+lo       80000000 80000000
+ivec2.saturating_sub lo-one      80000000 80000000
+ivec2.saturating_sub lo-hi       80000000 80000000
+ivec2.saturating_sub hi-lo       7fffffff 7fffffff
+ivec2.div                        fffffffd fffffffd
+ivec2.rem                        ffffffff 00000001
+ivec2.shl 1                      00000006 fffffff2
+ivec2.shl 3                      00000018 ffffffc8
+ivec2.shr 1                      00000001 fffffffc
+ivec2.shr 3                      00000000 ffffffff
+ivec2.abs                        00000005 00000000
+ivec2.signum                     ffffffff 00000000
+ivec2.shr neg 1                  ffffffe0 ffffffff
+ivec2.shr neg 3                  fffffff8 ffffffff
+ivec2.shl neg 2                  ffffff00 fffffffc
+ivec2.not neg                    0000003f 00000000
+ivec2.is_negative                03
+ivec2.sb.cmpeq                   00
+ivec2.sb.cmpne                   03
+ivec2.sb.cmplt                   02
+ivec2.sb.cmple                   02
+ivec2.sb.cmpgt                   01
+ivec2.sb.cmpge                   01
+ivec2.sb.min                     ffffffff ffffffff
+ivec2.sb.max                     7fffffff 7fffffff
+ivec2.sb.select                  7fffffff 7fffffff
+--- ivec3 ---
+ivec3.add                        00000008 fffffffb fffffff9
+ivec3.sub                        fffffffe fffffff7 0000000b
+ivec3.mul                        0000000f fffffff2 ffffffee
+ivec3.min                        00000003 fffffff9 fffffff7
+ivec3.max                        00000005 00000002 00000002
+ivec3.clamp                      00000003 fffffffc 00000002
+ivec3.cmpeq                      00
+ivec3.cmpne                      07
+ivec3.cmplt                      03
+ivec3.cmple                      03
+ivec3.cmpgt                      04
+ivec3.cmpge                      04
+ivec3.select                     00000003 fffffff9 fffffff7
+ivec3.bitand                     00000001 00000000 00000002
+ivec3.bitor                      00000007 fffffffb fffffff7
+ivec3.bitxor                     00000006 fffffffb fffffff5
+ivec3.not                        fffffffc 00000006 fffffffd
+ivec3.dot                        ffffffef
+ivec3.element_sum                fffffffe
+ivec3.element_product            fffffffa
+ivec3.min_element                fffffff9
+ivec3.max_element                00000003
+ivec3.wrapping_add hi+one        80000000 80000000 80000000
+ivec3.wrapping_add hi+hi         fffffffe fffffffe fffffffe
+ivec3.wrapping_sub lo-one        7fffffff 7fffffff 7fffffff
+ivec3.wrapping_sub lo-hi         00000001 00000001 00000001
+ivec3.wrapping_mul hi*hi         00000001 00000001 00000001
+ivec3.wrapping_mul lo*lo         00000000 00000000 00000000
+ivec3.wrapping_mul hi*lo         80000000 80000000 80000000
+ivec3.saturating_add hi+one      7fffffff 7fffffff 7fffffff
+ivec3.saturating_add hi+hi       7fffffff 7fffffff 7fffffff
+ivec3.saturating_add lo+lo       80000000 80000000 80000000
+ivec3.saturating_sub lo-one      80000000 80000000 80000000
+ivec3.saturating_sub lo-hi       80000000 80000000 80000000
+ivec3.saturating_sub hi-lo       7fffffff 7fffffff 7fffffff
+ivec3.div                        fffffffd fffffffd fffffffe
+ivec3.rem                        ffffffff 00000001 fffffffe
+ivec3.shl 1                      00000006 fffffff2 00000004
+ivec3.shl 3                      00000018 ffffffc8 00000010
+ivec3.shr 1                      00000001 fffffffc 00000001
+ivec3.shr 3                      00000000 ffffffff 00000000
+ivec3.abs                        00000005 00000000 00000009
+ivec3.signum                     ffffffff 00000000 00000001
+ivec3.shr neg 1                  ffffffe0 ffffffff 0000000c
+ivec3.shr neg 3                  fffffff8 ffffffff 00000003
+ivec3.shl neg 2                  ffffff00 fffffffc 00000064
+ivec3.not neg                    0000003f 00000000 ffffffe6
+ivec3.is_negative                03
+ivec3.sb.cmpeq                   00
+ivec3.sb.cmpne                   07
+ivec3.sb.cmplt                   06
+ivec3.sb.cmple                   06
+ivec3.sb.cmpgt                   01
+ivec3.sb.cmpge                   01
+ivec3.sb.min                     ffffffff ffffffff 80000000
+ivec3.sb.max                     7fffffff 7fffffff 00000000
+ivec3.sb.select                  7fffffff 7fffffff 00000000
+--- ivec4 ---
+ivec4.add                        00000008 fffffffb fffffff9 fffffff9
+ivec4.sub                        fffffffe fffffff7 0000000b fffffff1
+ivec4.mul                        0000000f fffffff2 ffffffee ffffffd4
+ivec4.min                        00000003 fffffff9 fffffff7 fffffff5
+ivec4.max                        00000005 00000002 00000002 00000004
+ivec4.clamp                      00000003 fffffffc 00000002 fffffffc
+ivec4.cmpeq                      00
+ivec4.cmpne                      0f
+ivec4.cmplt                      0b
+ivec4.cmple                      0b
+ivec4.cmpgt                      04
+ivec4.cmpge                      04
+ivec4.select                     00000003 fffffff9 fffffff7 fffffff5
+ivec4.bitand                     00000001 00000000 00000002 00000004
+ivec4.bitor                      00000007 fffffffb fffffff7 fffffff5
+ivec4.bitxor                     00000006 fffffffb fffffff5 fffffff1
+ivec4.not                        fffffffc 00000006 fffffffd 0000000a
+ivec4.dot                        ffffffc3
+ivec4.element_sum                fffffff3
+ivec4.element_product            0000000c
+ivec4.min_element                fffffff5
+ivec4.max_element                00000003
+ivec4.wrapping_add hi+one        80000000 80000000 80000000 80000000
+ivec4.wrapping_add hi+hi         fffffffe fffffffe fffffffe fffffffe
+ivec4.wrapping_sub lo-one        7fffffff 7fffffff 7fffffff 7fffffff
+ivec4.wrapping_sub lo-hi         00000001 00000001 00000001 00000001
+ivec4.wrapping_mul hi*hi         00000001 00000001 00000001 00000001
+ivec4.wrapping_mul lo*lo         00000000 00000000 00000000 00000000
+ivec4.wrapping_mul hi*lo         80000000 80000000 80000000 80000000
+ivec4.saturating_add hi+one      7fffffff 7fffffff 7fffffff 7fffffff
+ivec4.saturating_add hi+hi       7fffffff 7fffffff 7fffffff 7fffffff
+ivec4.saturating_add lo+lo       80000000 80000000 80000000 80000000
+ivec4.saturating_sub lo-one      80000000 80000000 80000000 80000000
+ivec4.saturating_sub lo-hi       80000000 80000000 80000000 80000000
+ivec4.saturating_sub hi-lo       7fffffff 7fffffff 7fffffff 7fffffff
+ivec4.div                        fffffffd fffffffd fffffffe fffffffe
+ivec4.rem                        ffffffff 00000001 fffffffe 00000001
+ivec4.shl 1                      00000006 fffffff2 00000004 ffffffea
+ivec4.shl 3                      00000018 ffffffc8 00000010 ffffffa8
+ivec4.shr 1                      00000001 fffffffc 00000001 fffffffa
+ivec4.shr 3                      00000000 ffffffff 00000000 fffffffe
+ivec4.abs                        00000005 00000000 00000009 00000001
+ivec4.signum                     ffffffff 00000000 00000001 ffffffff
+ivec4.shr neg 1                  ffffffe0 ffffffff 0000000c fffffffc
+ivec4.shr neg 3                  fffffff8 ffffffff 00000003 ffffffff
+ivec4.shl neg 2                  ffffff00 fffffffc 00000064 ffffffe4
+ivec4.not neg                    0000003f 00000000 ffffffe6 00000006
+ivec4.is_negative                0b
+ivec4.sb.cmpeq                   00
+ivec4.sb.cmpne                   0f
+ivec4.sb.cmplt                   06
+ivec4.sb.cmple                   06
+ivec4.sb.cmpgt                   09
+ivec4.sb.cmpge                   09
+ivec4.sb.min                     ffffffff ffffffff 80000000 80000000
+ivec4.sb.max                     7fffffff 7fffffff 00000000 00000000
+ivec4.sb.select                  7fffffff 7fffffff 00000000 00000000
+--- uvec2 ---
+uvec2.add                        0000000e 00000009
+uvec2.sub                        00000008 00000005
+uvec2.mul                        00000021 0000000e
+uvec2.min                        00000003 00000002
+uvec2.max                        0000000b 00000007
+uvec2.clamp                      00000009 00000007
+uvec2.cmpeq                      00
+uvec2.cmpne                      03
+uvec2.cmplt                      00
+uvec2.cmple                      00
+uvec2.cmpgt                      03
+uvec2.cmpge                      03
+uvec2.select                     00000003 00000002
+uvec2.bitand                     00000003 00000002
+uvec2.bitor                      0000000b 00000007
+uvec2.bitxor                     00000008 00000005
+uvec2.not                        fffffff4 fffffff8
+uvec2.dot                        0000002f
+uvec2.element_sum                00000012
+uvec2.element_product            00000006
+uvec2.min_element                00000007
+uvec2.max_element                0000000b
+uvec2.wrapping_add hi+one        00000000 00000000
+uvec2.wrapping_add hi+hi         fffffffe fffffffe
+uvec2.wrapping_sub lo-one        ffffffff ffffffff
+uvec2.wrapping_sub lo-hi         00000001 00000001
+uvec2.wrapping_mul hi*hi         00000001 00000001
+uvec2.wrapping_mul lo*lo         00000000 00000000
+uvec2.wrapping_mul hi*lo         00000000 00000000
+uvec2.saturating_add hi+one      ffffffff ffffffff
+uvec2.saturating_add hi+hi       ffffffff ffffffff
+uvec2.saturating_add lo+lo       00000000 00000000
+uvec2.saturating_sub lo-one      00000000 00000000
+uvec2.saturating_sub lo-hi       00000000 00000000
+uvec2.saturating_sub hi-lo       ffffffff ffffffff
+uvec2.div                        00000003 00000002
+uvec2.rem                        00000001 00000001
+uvec2.shl 1                      00000016 0000000e
+uvec2.shl 3                      00000058 00000038
+uvec2.shr 1                      00000005 00000003
+uvec2.shr 3                      00000001 00000000
+uvec2.hb.cmpeq                   00
+uvec2.hb.cmpne                   03
+uvec2.hb.cmplt                   02
+uvec2.hb.cmple                   02
+uvec2.hb.cmpgt                   01
+uvec2.hb.cmpge                   01
+uvec2.hb.cmpge mid               01
+uvec2.hb.min                     00000001 00000001
+uvec2.hb.max                     ffffffff ffffffff
+uvec2.hb.clamp                   80000000 00000001
+uvec2.hb.select                  ffffffff ffffffff
+uvec2.hb.shr 1                   7fffffff 00000000
+uvec2.hb.shr 4                   0fffffff 00000000
+--- uvec3 ---
+uvec3.add                        0000000e 00000009 0000000d
+uvec3.sub                        00000008 00000005 00000005
+uvec3.mul                        00000021 0000000e 00000024
+uvec3.min                        00000003 00000002 00000004
+uvec3.max                        0000000b 00000007 00000009
+uvec3.clamp                      00000009 00000007 00000009
+uvec3.cmpeq                      00
+uvec3.cmpne                      07
+uvec3.cmplt                      00
+uvec3.cmple                      00
+uvec3.cmpgt                      07
+uvec3.cmpge                      07
+uvec3.select                     00000003 00000002 00000004
+uvec3.bitand                     00000003 00000002 00000000
+uvec3.bitor                      0000000b 00000007 0000000d
+uvec3.bitxor                     00000008 00000005 0000000d
+uvec3.not                        fffffff4 fffffff8 fffffff6
+uvec3.dot                        00000053
+uvec3.element_sum                0000001b
+uvec3.element_product            00000006
+uvec3.min_element                00000007
+uvec3.max_element                0000000b
+uvec3.wrapping_add hi+one        00000000 00000000 00000000
+uvec3.wrapping_add hi+hi         fffffffe fffffffe fffffffe
+uvec3.wrapping_sub lo-one        ffffffff ffffffff ffffffff
+uvec3.wrapping_sub lo-hi         00000001 00000001 00000001
+uvec3.wrapping_mul hi*hi         00000001 00000001 00000001
+uvec3.wrapping_mul lo*lo         00000000 00000000 00000000
+uvec3.wrapping_mul hi*lo         00000000 00000000 00000000
+uvec3.saturating_add hi+one      ffffffff ffffffff ffffffff
+uvec3.saturating_add hi+hi       ffffffff ffffffff ffffffff
+uvec3.saturating_add lo+lo       00000000 00000000 00000000
+uvec3.saturating_sub lo-one      00000000 00000000 00000000
+uvec3.saturating_sub lo-hi       00000000 00000000 00000000
+uvec3.saturating_sub hi-lo       ffffffff ffffffff ffffffff
+uvec3.div                        00000003 00000002 00000002
+uvec3.rem                        00000001 00000001 00000002
+uvec3.shl 1                      00000016 0000000e 00000012
+uvec3.shl 3                      00000058 00000038 00000048
+uvec3.shr 1                      00000005 00000003 00000004
+uvec3.shr 3                      00000001 00000000 00000001
+uvec3.hb.cmpeq                   00
+uvec3.hb.cmpne                   07
+uvec3.hb.cmplt                   02
+uvec3.hb.cmple                   02
+uvec3.hb.cmpgt                   05
+uvec3.hb.cmpge                   05
+uvec3.hb.cmpge mid               05
+uvec3.hb.min                     00000001 00000001 7fffffff
+uvec3.hb.max                     ffffffff ffffffff 80000000
+uvec3.hb.clamp                   80000000 00000001 80000000
+uvec3.hb.select                  ffffffff ffffffff 80000000
+uvec3.hb.shr 1                   7fffffff 00000000 40000000
+uvec3.hb.shr 4                   0fffffff 00000000 08000000
+--- uvec4 ---
+uvec4.add                        0000000e 00000009 0000000d 00000006
+uvec4.sub                        00000008 00000005 00000005 00000004
+uvec4.mul                        00000021 0000000e 00000024 00000005
+uvec4.min                        00000003 00000002 00000004 00000001
+uvec4.max                        0000000b 00000007 00000009 00000005
+uvec4.clamp                      00000009 00000007 00000009 00000005
+uvec4.cmpeq                      00
+uvec4.cmpne                      0f
+uvec4.cmplt                      00
+uvec4.cmple                      00
+uvec4.cmpgt                      0f
+uvec4.cmpge                      0f
+uvec4.select                     00000003 00000002 00000004 00000001
+uvec4.bitand                     00000003 00000002 00000000 00000001
+uvec4.bitor                      0000000b 00000007 0000000d 00000005
+uvec4.bitxor                     00000008 00000005 0000000d 00000004
+uvec4.not                        fffffff4 fffffff8 fffffff6 fffffffa
+uvec4.dot                        00000058
+uvec4.element_sum                00000020
+uvec4.element_product            0000000c
+uvec4.min_element                00000005
+uvec4.max_element                0000000b
+uvec4.wrapping_add hi+one        00000000 00000000 00000000 00000000
+uvec4.wrapping_add hi+hi         fffffffe fffffffe fffffffe fffffffe
+uvec4.wrapping_sub lo-one        ffffffff ffffffff ffffffff ffffffff
+uvec4.wrapping_sub lo-hi         00000001 00000001 00000001 00000001
+uvec4.wrapping_mul hi*hi         00000001 00000001 00000001 00000001
+uvec4.wrapping_mul lo*lo         00000000 00000000 00000000 00000000
+uvec4.wrapping_mul hi*lo         00000000 00000000 00000000 00000000
+uvec4.saturating_add hi+one      ffffffff ffffffff ffffffff ffffffff
+uvec4.saturating_add hi+hi       ffffffff ffffffff ffffffff ffffffff
+uvec4.saturating_add lo+lo       00000000 00000000 00000000 00000000
+uvec4.saturating_sub lo-one      00000000 00000000 00000000 00000000
+uvec4.saturating_sub lo-hi       00000000 00000000 00000000 00000000
+uvec4.saturating_sub hi-lo       ffffffff ffffffff ffffffff ffffffff
+uvec4.div                        00000003 00000002 00000002 00000002
+uvec4.rem                        00000001 00000001 00000002 00000001
+uvec4.shl 1                      00000016 0000000e 00000012 0000000a
+uvec4.shl 3                      00000058 00000038 00000048 00000028
+uvec4.shr 1                      00000005 00000003 00000004 00000002
+uvec4.shr 3                      00000001 00000000 00000001 00000000
+uvec4.hb.cmpeq                   00
+uvec4.hb.cmpne                   0f
+uvec4.hb.cmplt                   0a
+uvec4.hb.cmple                   0a
+uvec4.hb.cmpgt                   05
+uvec4.hb.cmpge                   05
+uvec4.hb.cmpge mid               05
+uvec4.hb.min                     00000001 00000001 7fffffff 7fffffff
+uvec4.hb.max                     ffffffff ffffffff 80000000 80000000
+uvec4.hb.clamp                   80000000 00000001 80000000 7fffffff
+uvec4.hb.select                  ffffffff ffffffff 80000000 80000000
+uvec4.hb.shr 1                   7fffffff 00000000 40000000 3fffffff
+uvec4.hb.shr 4                   0fffffff 00000000 08000000 07ffffff
+--- i64vec2 ---
+i64vec2.add                      0000000000000008 fffffffffffffffb
+i64vec2.sub                      fffffffffffffffe fffffffffffffff7
+i64vec2.mul                      000000000000000f fffffffffffffff2
+i64vec2.min                      0000000000000003 fffffffffffffff9
+i64vec2.max                      0000000000000005 0000000000000002
+i64vec2.clamp                    0000000000000003 fffffffffffffffc
+i64vec2.cmpeq                    00
+i64vec2.cmpne                    03
+i64vec2.cmplt                    03
+i64vec2.cmple                    03
+i64vec2.cmpgt                    00
+i64vec2.cmpge                    00
+i64vec2.select                   0000000000000003 fffffffffffffff9
+i64vec2.bitand                   0000000000000001 0000000000000000
+i64vec2.bitor                    0000000000000007 fffffffffffffffb
+i64vec2.bitxor                   0000000000000006 fffffffffffffffb
+i64vec2.not                      fffffffffffffffc 0000000000000006
+i64vec2.dot                      0000000000000001
+i64vec2.element_sum              fffffffffffffffc
+i64vec2.element_product          fffffffffffffffa
+i64vec2.min_element              fffffffffffffff9
+i64vec2.max_element              0000000000000003
+i64vec2.wrapping_add hi+one      8000000000000000 8000000000000000
+i64vec2.wrapping_add hi+hi       fffffffffffffffe fffffffffffffffe
+i64vec2.wrapping_sub lo-one      7fffffffffffffff 7fffffffffffffff
+i64vec2.wrapping_sub lo-hi       0000000000000001 0000000000000001
+i64vec2.wrapping_mul hi*hi       0000000000000001 0000000000000001
+i64vec2.wrapping_mul lo*lo       0000000000000000 0000000000000000
+i64vec2.wrapping_mul hi*lo       8000000000000000 8000000000000000
+i64vec2.saturating_add hi+one    7fffffffffffffff 7fffffffffffffff
+i64vec2.saturating_add hi+hi     7fffffffffffffff 7fffffffffffffff
+i64vec2.saturating_add lo+lo     8000000000000000 8000000000000000
+i64vec2.saturating_sub lo-one    8000000000000000 8000000000000000
+i64vec2.saturating_sub lo-hi     8000000000000000 8000000000000000
+i64vec2.saturating_sub hi-lo     7fffffffffffffff 7fffffffffffffff
+i64vec2.div                      fffffffffffffffd fffffffffffffffd
+i64vec2.rem                      ffffffffffffffff 0000000000000001
+i64vec2.shl 1                    0000000000000006 fffffffffffffff2
+i64vec2.shl 3                    0000000000000018 ffffffffffffffc8
+i64vec2.shr 1                    0000000000000001 fffffffffffffffc
+i64vec2.shr 3                    0000000000000000 ffffffffffffffff
+i64vec2.abs                      0000000000000005 0000000000000000
+i64vec2.signum                   ffffffffffffffff 0000000000000000
+i64vec2.shr neg 1                ffffffffffffffe0 ffffffffffffffff
+i64vec2.shr neg 3                fffffffffffffff8 ffffffffffffffff
+i64vec2.shl neg 2                ffffffffffffff00 fffffffffffffffc
+i64vec2.not neg                  000000000000003f 0000000000000000
+i64vec2.is_negative              03
+i64vec2.sb.cmpeq                 00
+i64vec2.sb.cmpne                 03
+i64vec2.sb.cmplt                 02
+i64vec2.sb.cmple                 02
+i64vec2.sb.cmpgt                 01
+i64vec2.sb.cmpge                 01
+i64vec2.sb.min                   ffffffffffffffff ffffffffffffffff
+i64vec2.sb.max                   7fffffffffffffff 7fffffffffffffff
+i64vec2.sb.select                7fffffffffffffff 7fffffffffffffff
+--- i64vec3 ---
+i64vec3.add                      0000000000000008 fffffffffffffffb fffffffffffffff9
+i64vec3.sub                      fffffffffffffffe fffffffffffffff7 000000000000000b
+i64vec3.mul                      000000000000000f fffffffffffffff2 ffffffffffffffee
+i64vec3.min                      0000000000000003 fffffffffffffff9 fffffffffffffff7
+i64vec3.max                      0000000000000005 0000000000000002 0000000000000002
+i64vec3.clamp                    0000000000000003 fffffffffffffffc 0000000000000002
+i64vec3.cmpeq                    00
+i64vec3.cmpne                    07
+i64vec3.cmplt                    03
+i64vec3.cmple                    03
+i64vec3.cmpgt                    04
+i64vec3.cmpge                    04
+i64vec3.select                   0000000000000003 fffffffffffffff9 fffffffffffffff7
+i64vec3.bitand                   0000000000000001 0000000000000000 0000000000000002
+i64vec3.bitor                    0000000000000007 fffffffffffffffb fffffffffffffff7
+i64vec3.bitxor                   0000000000000006 fffffffffffffffb fffffffffffffff5
+i64vec3.not                      fffffffffffffffc 0000000000000006 fffffffffffffffd
+i64vec3.dot                      ffffffffffffffef
+i64vec3.element_sum              fffffffffffffffe
+i64vec3.element_product          fffffffffffffffa
+i64vec3.min_element              fffffffffffffff9
+i64vec3.max_element              0000000000000003
+i64vec3.wrapping_add hi+one      8000000000000000 8000000000000000 8000000000000000
+i64vec3.wrapping_add hi+hi       fffffffffffffffe fffffffffffffffe fffffffffffffffe
+i64vec3.wrapping_sub lo-one      7fffffffffffffff 7fffffffffffffff 7fffffffffffffff
+i64vec3.wrapping_sub lo-hi       0000000000000001 0000000000000001 0000000000000001
+i64vec3.wrapping_mul hi*hi       0000000000000001 0000000000000001 0000000000000001
+i64vec3.wrapping_mul lo*lo       0000000000000000 0000000000000000 0000000000000000
+i64vec3.wrapping_mul hi*lo       8000000000000000 8000000000000000 8000000000000000
+i64vec3.saturating_add hi+one    7fffffffffffffff 7fffffffffffffff 7fffffffffffffff
+i64vec3.saturating_add hi+hi     7fffffffffffffff 7fffffffffffffff 7fffffffffffffff
+i64vec3.saturating_add lo+lo     8000000000000000 8000000000000000 8000000000000000
+i64vec3.saturating_sub lo-one    8000000000000000 8000000000000000 8000000000000000
+i64vec3.saturating_sub lo-hi     8000000000000000 8000000000000000 8000000000000000
+i64vec3.saturating_sub hi-lo     7fffffffffffffff 7fffffffffffffff 7fffffffffffffff
+i64vec3.div                      fffffffffffffffd fffffffffffffffd fffffffffffffffe
+i64vec3.rem                      ffffffffffffffff 0000000000000001 fffffffffffffffe
+i64vec3.shl 1                    0000000000000006 fffffffffffffff2 0000000000000004
+i64vec3.shl 3                    0000000000000018 ffffffffffffffc8 0000000000000010
+i64vec3.shr 1                    0000000000000001 fffffffffffffffc 0000000000000001
+i64vec3.shr 3                    0000000000000000 ffffffffffffffff 0000000000000000
+i64vec3.abs                      0000000000000005 0000000000000000 0000000000000009
+i64vec3.signum                   ffffffffffffffff 0000000000000000 0000000000000001
+i64vec3.shr neg 1                ffffffffffffffe0 ffffffffffffffff 000000000000000c
+i64vec3.shr neg 3                fffffffffffffff8 ffffffffffffffff 0000000000000003
+i64vec3.shl neg 2                ffffffffffffff00 fffffffffffffffc 0000000000000064
+i64vec3.not neg                  000000000000003f 0000000000000000 ffffffffffffffe6
+i64vec3.is_negative              03
+i64vec3.sb.cmpeq                 00
+i64vec3.sb.cmpne                 07
+i64vec3.sb.cmplt                 06
+i64vec3.sb.cmple                 06
+i64vec3.sb.cmpgt                 01
+i64vec3.sb.cmpge                 01
+i64vec3.sb.min                   ffffffffffffffff ffffffffffffffff 8000000000000000
+i64vec3.sb.max                   7fffffffffffffff 7fffffffffffffff 0000000000000000
+i64vec3.sb.select                7fffffffffffffff 7fffffffffffffff 0000000000000000
+--- i64vec4 ---
+i64vec4.add                      0000000000000008 fffffffffffffffb fffffffffffffff9 fffffffffffffff9
+i64vec4.sub                      fffffffffffffffe fffffffffffffff7 000000000000000b fffffffffffffff1
+i64vec4.mul                      000000000000000f fffffffffffffff2 ffffffffffffffee ffffffffffffffd4
+i64vec4.min                      0000000000000003 fffffffffffffff9 fffffffffffffff7 fffffffffffffff5
+i64vec4.max                      0000000000000005 0000000000000002 0000000000000002 0000000000000004
+i64vec4.clamp                    0000000000000003 fffffffffffffffc 0000000000000002 fffffffffffffffc
+i64vec4.cmpeq                    00
+i64vec4.cmpne                    0f
+i64vec4.cmplt                    0b
+i64vec4.cmple                    0b
+i64vec4.cmpgt                    04
+i64vec4.cmpge                    04
+i64vec4.select                   0000000000000003 fffffffffffffff9 fffffffffffffff7 fffffffffffffff5
+i64vec4.bitand                   0000000000000001 0000000000000000 0000000000000002 0000000000000004
+i64vec4.bitor                    0000000000000007 fffffffffffffffb fffffffffffffff7 fffffffffffffff5
+i64vec4.bitxor                   0000000000000006 fffffffffffffffb fffffffffffffff5 fffffffffffffff1
+i64vec4.not                      fffffffffffffffc 0000000000000006 fffffffffffffffd 000000000000000a
+i64vec4.dot                      ffffffffffffffc3
+i64vec4.element_sum              fffffffffffffff3
+i64vec4.element_product          000000000000000c
+i64vec4.min_element              fffffffffffffff5
+i64vec4.max_element              0000000000000003
+i64vec4.wrapping_add hi+one      8000000000000000 8000000000000000 8000000000000000 8000000000000000
+i64vec4.wrapping_add hi+hi       fffffffffffffffe fffffffffffffffe fffffffffffffffe fffffffffffffffe
+i64vec4.wrapping_sub lo-one      7fffffffffffffff 7fffffffffffffff 7fffffffffffffff 7fffffffffffffff
+i64vec4.wrapping_sub lo-hi       0000000000000001 0000000000000001 0000000000000001 0000000000000001
+i64vec4.wrapping_mul hi*hi       0000000000000001 0000000000000001 0000000000000001 0000000000000001
+i64vec4.wrapping_mul lo*lo       0000000000000000 0000000000000000 0000000000000000 0000000000000000
+i64vec4.wrapping_mul hi*lo       8000000000000000 8000000000000000 8000000000000000 8000000000000000
+i64vec4.saturating_add hi+one    7fffffffffffffff 7fffffffffffffff 7fffffffffffffff 7fffffffffffffff
+i64vec4.saturating_add hi+hi     7fffffffffffffff 7fffffffffffffff 7fffffffffffffff 7fffffffffffffff
+i64vec4.saturating_add lo+lo     8000000000000000 8000000000000000 8000000000000000 8000000000000000
+i64vec4.saturating_sub lo-one    8000000000000000 8000000000000000 8000000000000000 8000000000000000
+i64vec4.saturating_sub lo-hi     8000000000000000 8000000000000000 8000000000000000 8000000000000000
+i64vec4.saturating_sub hi-lo     7fffffffffffffff 7fffffffffffffff 7fffffffffffffff 7fffffffffffffff
+i64vec4.div                      fffffffffffffffd fffffffffffffffd fffffffffffffffe fffffffffffffffe
+i64vec4.rem                      ffffffffffffffff 0000000000000001 fffffffffffffffe 0000000000000001
+i64vec4.shl 1                    0000000000000006 fffffffffffffff2 0000000000000004 ffffffffffffffea
+i64vec4.shl 3                    0000000000000018 ffffffffffffffc8 0000000000000010 ffffffffffffffa8
+i64vec4.shr 1                    0000000000000001 fffffffffffffffc 0000000000000001 fffffffffffffffa
+i64vec4.shr 3                    0000000000000000 ffffffffffffffff 0000000000000000 fffffffffffffffe
+i64vec4.abs                      0000000000000005 0000000000000000 0000000000000009 0000000000000001
+i64vec4.signum                   ffffffffffffffff 0000000000000000 0000000000000001 ffffffffffffffff
+i64vec4.shr neg 1                ffffffffffffffe0 ffffffffffffffff 000000000000000c fffffffffffffffc
+i64vec4.shr neg 3                fffffffffffffff8 ffffffffffffffff 0000000000000003 ffffffffffffffff
+i64vec4.shl neg 2                ffffffffffffff00 fffffffffffffffc 0000000000000064 ffffffffffffffe4
+i64vec4.not neg                  000000000000003f 0000000000000000 ffffffffffffffe6 0000000000000006
+i64vec4.is_negative              0b
+i64vec4.sb.cmpeq                 00
+i64vec4.sb.cmpne                 0f
+i64vec4.sb.cmplt                 06
+i64vec4.sb.cmple                 06
+i64vec4.sb.cmpgt                 09
+i64vec4.sb.cmpge                 09
+i64vec4.sb.min                   ffffffffffffffff ffffffffffffffff 8000000000000000 8000000000000000
+i64vec4.sb.max                   7fffffffffffffff 7fffffffffffffff 0000000000000000 0000000000000000
+i64vec4.sb.select                7fffffffffffffff 7fffffffffffffff 0000000000000000 0000000000000000
+--- u64vec2 ---
+u64vec2.add                      000000000000000e 0000000000000009
+u64vec2.sub                      0000000000000008 0000000000000005
+u64vec2.mul                      0000000000000021 000000000000000e
+u64vec2.min                      0000000000000003 0000000000000002
+u64vec2.max                      000000000000000b 0000000000000007
+u64vec2.clamp                    0000000000000009 0000000000000007
+u64vec2.cmpeq                    00
+u64vec2.cmpne                    03
+u64vec2.cmplt                    00
+u64vec2.cmple                    00
+u64vec2.cmpgt                    03
+u64vec2.cmpge                    03
+u64vec2.select                   0000000000000003 0000000000000002
+u64vec2.bitand                   0000000000000003 0000000000000002
+u64vec2.bitor                    000000000000000b 0000000000000007
+u64vec2.bitxor                   0000000000000008 0000000000000005
+u64vec2.not                      fffffffffffffff4 fffffffffffffff8
+u64vec2.dot                      000000000000002f
+u64vec2.element_sum              0000000000000012
+u64vec2.element_product          0000000000000006
+u64vec2.min_element              0000000000000007
+u64vec2.max_element              000000000000000b
+u64vec2.wrapping_add hi+one      0000000000000000 0000000000000000
+u64vec2.wrapping_add hi+hi       fffffffffffffffe fffffffffffffffe
+u64vec2.wrapping_sub lo-one      ffffffffffffffff ffffffffffffffff
+u64vec2.wrapping_sub lo-hi       0000000000000001 0000000000000001
+u64vec2.wrapping_mul hi*hi       0000000000000001 0000000000000001
+u64vec2.wrapping_mul lo*lo       0000000000000000 0000000000000000
+u64vec2.wrapping_mul hi*lo       0000000000000000 0000000000000000
+u64vec2.saturating_add hi+one    ffffffffffffffff ffffffffffffffff
+u64vec2.saturating_add hi+hi     ffffffffffffffff ffffffffffffffff
+u64vec2.saturating_add lo+lo     0000000000000000 0000000000000000
+u64vec2.saturating_sub lo-one    0000000000000000 0000000000000000
+u64vec2.saturating_sub lo-hi     0000000000000000 0000000000000000
+u64vec2.saturating_sub hi-lo     ffffffffffffffff ffffffffffffffff
+u64vec2.div                      0000000000000003 0000000000000002
+u64vec2.rem                      0000000000000001 0000000000000001
+u64vec2.shl 1                    0000000000000016 000000000000000e
+u64vec2.shl 3                    0000000000000058 0000000000000038
+u64vec2.shr 1                    0000000000000005 0000000000000003
+u64vec2.shr 3                    0000000000000001 0000000000000000
+u64vec2.hb.cmpeq                 00
+u64vec2.hb.cmpne                 03
+u64vec2.hb.cmplt                 02
+u64vec2.hb.cmple                 02
+u64vec2.hb.cmpgt                 01
+u64vec2.hb.cmpge                 01
+u64vec2.hb.cmpge mid             01
+u64vec2.hb.min                   0000000000000001 0000000000000001
+u64vec2.hb.max                   ffffffffffffffff ffffffffffffffff
+u64vec2.hb.clamp                 8000000000000000 0000000000000001
+u64vec2.hb.select                ffffffffffffffff ffffffffffffffff
+u64vec2.hb.shr 1                 7fffffffffffffff 0000000000000000
+u64vec2.hb.shr 4                 0fffffffffffffff 0000000000000000
+--- u64vec3 ---
+u64vec3.add                      000000000000000e 0000000000000009 000000000000000d
+u64vec3.sub                      0000000000000008 0000000000000005 0000000000000005
+u64vec3.mul                      0000000000000021 000000000000000e 0000000000000024
+u64vec3.min                      0000000000000003 0000000000000002 0000000000000004
+u64vec3.max                      000000000000000b 0000000000000007 0000000000000009
+u64vec3.clamp                    0000000000000009 0000000000000007 0000000000000009
+u64vec3.cmpeq                    00
+u64vec3.cmpne                    07
+u64vec3.cmplt                    00
+u64vec3.cmple                    00
+u64vec3.cmpgt                    07
+u64vec3.cmpge                    07
+u64vec3.select                   0000000000000003 0000000000000002 0000000000000004
+u64vec3.bitand                   0000000000000003 0000000000000002 0000000000000000
+u64vec3.bitor                    000000000000000b 0000000000000007 000000000000000d
+u64vec3.bitxor                   0000000000000008 0000000000000005 000000000000000d
+u64vec3.not                      fffffffffffffff4 fffffffffffffff8 fffffffffffffff6
+u64vec3.dot                      0000000000000053
+u64vec3.element_sum              000000000000001b
+u64vec3.element_product          0000000000000006
+u64vec3.min_element              0000000000000007
+u64vec3.max_element              000000000000000b
+u64vec3.wrapping_add hi+one      0000000000000000 0000000000000000 0000000000000000
+u64vec3.wrapping_add hi+hi       fffffffffffffffe fffffffffffffffe fffffffffffffffe
+u64vec3.wrapping_sub lo-one      ffffffffffffffff ffffffffffffffff ffffffffffffffff
+u64vec3.wrapping_sub lo-hi       0000000000000001 0000000000000001 0000000000000001
+u64vec3.wrapping_mul hi*hi       0000000000000001 0000000000000001 0000000000000001
+u64vec3.wrapping_mul lo*lo       0000000000000000 0000000000000000 0000000000000000
+u64vec3.wrapping_mul hi*lo       0000000000000000 0000000000000000 0000000000000000
+u64vec3.saturating_add hi+one    ffffffffffffffff ffffffffffffffff ffffffffffffffff
+u64vec3.saturating_add hi+hi     ffffffffffffffff ffffffffffffffff ffffffffffffffff
+u64vec3.saturating_add lo+lo     0000000000000000 0000000000000000 0000000000000000
+u64vec3.saturating_sub lo-one    0000000000000000 0000000000000000 0000000000000000
+u64vec3.saturating_sub lo-hi     0000000000000000 0000000000000000 0000000000000000
+u64vec3.saturating_sub hi-lo     ffffffffffffffff ffffffffffffffff ffffffffffffffff
+u64vec3.div                      0000000000000003 0000000000000002 0000000000000002
+u64vec3.rem                      0000000000000001 0000000000000001 0000000000000002
+u64vec3.shl 1                    0000000000000016 000000000000000e 0000000000000012
+u64vec3.shl 3                    0000000000000058 0000000000000038 0000000000000048
+u64vec3.shr 1                    0000000000000005 0000000000000003 0000000000000004
+u64vec3.shr 3                    0000000000000001 0000000000000000 0000000000000001
+u64vec3.hb.cmpeq                 00
+u64vec3.hb.cmpne                 07
+u64vec3.hb.cmplt                 02
+u64vec3.hb.cmple                 02
+u64vec3.hb.cmpgt                 05
+u64vec3.hb.cmpge                 05
+u64vec3.hb.cmpge mid             05
+u64vec3.hb.min                   0000000000000001 0000000000000001 7fffffffffffffff
+u64vec3.hb.max                   ffffffffffffffff ffffffffffffffff 8000000000000000
+u64vec3.hb.clamp                 8000000000000000 0000000000000001 8000000000000000
+u64vec3.hb.select                ffffffffffffffff ffffffffffffffff 8000000000000000
+u64vec3.hb.shr 1                 7fffffffffffffff 0000000000000000 4000000000000000
+u64vec3.hb.shr 4                 0fffffffffffffff 0000000000000000 0800000000000000
+--- u64vec4 ---
+u64vec4.add                      000000000000000e 0000000000000009 000000000000000d 0000000000000006
+u64vec4.sub                      0000000000000008 0000000000000005 0000000000000005 0000000000000004
+u64vec4.mul                      0000000000000021 000000000000000e 0000000000000024 0000000000000005
+u64vec4.min                      0000000000000003 0000000000000002 0000000000000004 0000000000000001
+u64vec4.max                      000000000000000b 0000000000000007 0000000000000009 0000000000000005
+u64vec4.clamp                    0000000000000009 0000000000000007 0000000000000009 0000000000000005
+u64vec4.cmpeq                    00
+u64vec4.cmpne                    0f
+u64vec4.cmplt                    00
+u64vec4.cmple                    00
+u64vec4.cmpgt                    0f
+u64vec4.cmpge                    0f
+u64vec4.select                   0000000000000003 0000000000000002 0000000000000004 0000000000000001
+u64vec4.bitand                   0000000000000003 0000000000000002 0000000000000000 0000000000000001
+u64vec4.bitor                    000000000000000b 0000000000000007 000000000000000d 0000000000000005
+u64vec4.bitxor                   0000000000000008 0000000000000005 000000000000000d 0000000000000004
+u64vec4.not                      fffffffffffffff4 fffffffffffffff8 fffffffffffffff6 fffffffffffffffa
+u64vec4.dot                      0000000000000058
+u64vec4.element_sum              0000000000000020
+u64vec4.element_product          000000000000000c
+u64vec4.min_element              0000000000000005
+u64vec4.max_element              000000000000000b
+u64vec4.wrapping_add hi+one      0000000000000000 0000000000000000 0000000000000000 0000000000000000
+u64vec4.wrapping_add hi+hi       fffffffffffffffe fffffffffffffffe fffffffffffffffe fffffffffffffffe
+u64vec4.wrapping_sub lo-one      ffffffffffffffff ffffffffffffffff ffffffffffffffff ffffffffffffffff
+u64vec4.wrapping_sub lo-hi       0000000000000001 0000000000000001 0000000000000001 0000000000000001
+u64vec4.wrapping_mul hi*hi       0000000000000001 0000000000000001 0000000000000001 0000000000000001
+u64vec4.wrapping_mul lo*lo       0000000000000000 0000000000000000 0000000000000000 0000000000000000
+u64vec4.wrapping_mul hi*lo       0000000000000000 0000000000000000 0000000000000000 0000000000000000
+u64vec4.saturating_add hi+one    ffffffffffffffff ffffffffffffffff ffffffffffffffff ffffffffffffffff
+u64vec4.saturating_add hi+hi     ffffffffffffffff ffffffffffffffff ffffffffffffffff ffffffffffffffff
+u64vec4.saturating_add lo+lo     0000000000000000 0000000000000000 0000000000000000 0000000000000000
+u64vec4.saturating_sub lo-one    0000000000000000 0000000000000000 0000000000000000 0000000000000000
+u64vec4.saturating_sub lo-hi     0000000000000000 0000000000000000 0000000000000000 0000000000000000
+u64vec4.saturating_sub hi-lo     ffffffffffffffff ffffffffffffffff ffffffffffffffff ffffffffffffffff
+u64vec4.div                      0000000000000003 0000000000000002 0000000000000002 0000000000000002
+u64vec4.rem                      0000000000000001 0000000000000001 0000000000000002 0000000000000001
+u64vec4.shl 1                    0000000000000016 000000000000000e 0000000000000012 000000000000000a
+u64vec4.shl 3                    0000000000000058 0000000000000038 0000000000000048 0000000000000028
+u64vec4.shr 1                    0000000000000005 0000000000000003 0000000000000004 0000000000000002
+u64vec4.shr 3                    0000000000000001 0000000000000000 0000000000000001 0000000000000000
+u64vec4.hb.cmpeq                 00
+u64vec4.hb.cmpne                 0f
+u64vec4.hb.cmplt                 0a
+u64vec4.hb.cmple                 0a
+u64vec4.hb.cmpgt                 05
+u64vec4.hb.cmpge                 05
+u64vec4.hb.cmpge mid             05
+u64vec4.hb.min                   0000000000000001 0000000000000001 7fffffffffffffff 7fffffffffffffff
+u64vec4.hb.max                   ffffffffffffffff ffffffffffffffff 8000000000000000 8000000000000000
+u64vec4.hb.clamp                 8000000000000000 0000000000000001 8000000000000000 7fffffffffffffff
+u64vec4.hb.select                ffffffffffffffff ffffffffffffffff 8000000000000000 8000000000000000
+u64vec4.hb.shr 1                 7fffffffffffffff 0000000000000000 4000000000000000 3fffffffffffffff
+u64vec4.hb.shr 4                 0fffffffffffffff 0000000000000000 0800000000000000 07ffffffffffffff

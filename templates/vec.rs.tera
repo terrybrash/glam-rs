@@ -129,6 +129,97 @@
     {% set bveca_from_type = "BVec" ~ dim ~ "A" %}
 {% endif %}
 
+{# Narrow integer SIMD.
+
+   The 4-lane 8-bit and 16-bit vectors are the only integer types that LLVM does
+   not vectorize. It lowers them to a SWAR sequence in a 64-bit register: 19
+   instructions for one add and 23 for one min on ARM, and a 256-bit `ymm`
+   round trip on x86-64. The 32-bit and 64-bit integer vectors already compile
+   to one packed instruction, thus they stay scalar. Measurement, not instruction
+   count, chose this set. See rewrite.md.
+
+   These types keep `#[repr(C)]` plain fields, the same size and the same
+   alignment. Only the method bodies change. Thus one generated file serves both
+   processors, and `#[cfg(target_arch = ...)]` picks the body. This is not how
+   `Vec3A` and `Vec4` work: those change the struct itself, and so they need one
+   file per backend.
+
+   `dim` 2 and `dim` 3 are excluded on purpose. A 3-lane 8-bit vector is 3 bytes,
+   and the smallest vector load reads 4, thus a load would read past the end of
+   the object. #}
+{% set is_narrow_int = false %}
+{% set lane_bits = 0 %}
+{% if not is_float and dim == 4 %}
+    {% if scalar_t == "i8" %}
+        {% set is_narrow_int = true %}
+        {% set neon_t = "int8x8_t" %}
+        {% set neon_sfx = "s8" %}
+        {% set sse_sfx = "epi8" %}
+        {% set lane_bits = 8 %}
+    {% elif scalar_t == "u8" %}
+        {% set is_narrow_int = true %}
+        {% set neon_t = "uint8x8_t" %}
+        {% set neon_sfx = "u8" %}
+        {% set sse_sfx = "epu8" %}
+        {% set lane_bits = 8 %}
+    {% elif scalar_t == "i16" %}
+        {% set is_narrow_int = true %}
+        {% set neon_t = "int16x4_t" %}
+        {% set neon_sfx = "s16" %}
+        {% set sse_sfx = "epi16" %}
+        {% set lane_bits = 16 %}
+    {% elif scalar_t == "u16" %}
+        {% set is_narrow_int = true %}
+        {% set neon_t = "uint16x4_t" %}
+        {% set neon_sfx = "u16" %}
+        {% set sse_sfx = "epu16" %}
+        {% set lane_bits = 16 %}
+    {% endif %}
+{% endif %}
+{# The three cfg conditions, written once. `scalar-math` is a test reference and
+   must never reach a SIMD body. #}
+{% set cfg_neon = "#[cfg(all(target_arch = \"aarch64\", not(feature = \"scalar-math\")))]" %}
+{% set cfg_sse = "#[cfg(all(target_arch = \"x86_64\", not(feature = \"scalar-math\")))]" %}
+{% set cfg_soft = "#[cfg(not(all(any(target_arch = \"aarch64\", target_arch = \"x86_64\"), not(feature = \"scalar-math\"))))]" %}
+{# The same three conditions, but for an operation that can overflow. A SIMD lane
+   wraps and does not panic. Rust wraps in release and panics in debug. Thus the
+   SIMD body is for release only, and debug keeps the scalar body and the panic.
+
+   Note the knob: this is `debug_assertions`, not `overflow_checks`. The correct
+   gate is `overflow_checks`, but it is unstable on the pinned rustc 1.96.0
+   (error E0658, issue 111466). A release profile that sets `overflow-checks =
+   true` therefore gets the wrapping SIMD body and no panic. See rewrite.md. #}
+{% set cfg_neon_rel = "#[cfg(all(target_arch = \"aarch64\", not(feature = \"scalar-math\"), not(debug_assertions)))]" %}
+{% set cfg_sse_rel = "#[cfg(all(target_arch = \"x86_64\", not(feature = \"scalar-math\"), not(debug_assertions)))]" %}
+{% set cfg_soft_rel = "#[cfg(not(all(any(target_arch = \"aarch64\", target_arch = \"x86_64\"), not(feature = \"scalar-math\"), not(debug_assertions))))]" %}
+{# x86-64 has no 8-bit packed multiply. `_mm_mullo_epi8` does not exist, and the
+   unpack, multiply, pack sequence is longer than the code LLVM makes today.
+   Measurement agrees: 8-bit multiply already beats the 32-bit control. Thus
+   multiply is for the 16-bit types only. #}
+{% set has_narrow_mul = is_narrow_int and lane_bits == 16 %}
+{# Add and subtract are for the 16-bit types only, and measurement is the reason.
+
+   An 8-bit 4-lane add was already good code: LLVM vectorized it ACROSS the
+   elements of a loop, because the scalar body is transparent to the optimizer.
+   The helpers `to_v` and `from_v` are opaque, thus a hand-written body works on
+   one vector at a time and stops that. Measured on native aarch64: 8-bit add and
+   subtract became 64 percent SLOWER, while 16-bit add and subtract became 42
+   percent faster. Minimum and maximum keep the 8-bit body, because LLVM made
+   fully scalar code for those and there was nothing to lose.
+
+   This is the same hazard as pinning a 32-bit vector to `xmm` on x86-64: a
+   narrow hand-written body can block a wider automatic one. #}
+{% set has_narrow_addsub = is_narrow_int and lane_bits == 16 %}
+{# x86-64 names min and max by signedness (`PMINSW` against `PMINUW`) but names
+   add, subtract and multiply by width only. Two's complement makes those three
+   sign-agnostic in the low half, thus `_mm_add_epi16` serves `u16` as well.
+   There is no `_mm_add_epu16`. NEON keeps the signed suffix everywhere. #}
+{% if lane_bits == 8 %}
+    {% set sse_bits_sfx = "epi8" %}
+{% elif lane_bits == 16 %}
+    {% set sse_bits_sfx = "epi16" %}
+{% endif %}
+
 {% set components = ["x", "y", "z", "w"] [:dim] %}
 {% if is_float %}
     {% set one = "1.0" %}
@@ -207,6 +298,13 @@ use core::{f32, ops::*};
 use core::arch::x86_64::*;
 {% elif is_aarch64 %}
 use core::arch::aarch64::*;
+{% endif %}
+
+{% if is_narrow_int %}
+{{ cfg_neon }}
+use core::arch::aarch64::*;
+{{ cfg_sse }}
+use core::arch::x86_64::*;
 {% endif %}
 
 
@@ -403,6 +501,63 @@ impl {{ self_t }} {
             unsafe { UnionCast { a: [v; 4] }.v }
         {% endif %}
     }
+
+{% if is_narrow_int %}
+    {# Move the whole vector into one processor register, and back.
+
+       The struct keeps `#[repr(C)]` plain fields, thus these helpers do a load
+       and a store, not a change of representation. `{{ self_t }}` is
+       {{ lane_bits * 4 / 8 }} bytes, and each load below reads exactly that many
+       bytes. No load reads past the end of the object. #}
+    {{ cfg_neon }}
+    #[inline(always)]
+    fn to_v(self) -> {{ neon_t }} {
+        {% if lane_bits == 16 %}
+            unsafe { vld1_{{ neon_sfx }}((&self as *const Self).cast::<{{ scalar_t }}>()) }
+        {% else %}
+            let bits: u32 = unsafe { core::mem::transmute(self) };
+            unsafe { vreinterpret_{{ neon_sfx }}_u32(vdup_n_u32(bits)) }
+        {% endif %}
+    }
+
+    {{ cfg_neon }}
+    #[inline(always)]
+    fn from_v(v: {{ neon_t }}) -> Self {
+        {% if lane_bits == 16 %}
+            let mut out = Self::ZERO;
+            unsafe { vst1_{{ neon_sfx }}((&mut out as *mut Self).cast::<{{ scalar_t }}>(), v) };
+            out
+        {% else %}
+            let bits = unsafe { vget_lane_u32::<0>(vreinterpret_u32_{{ neon_sfx }}(v)) };
+            unsafe { core::mem::transmute(bits) }
+        {% endif %}
+    }
+
+    {{ cfg_sse }}
+    #[inline(always)]
+    fn to_v(self) -> __m128i {
+        {% if lane_bits == 16 %}
+            {# `MOVQ` reads 8 bytes and needs no alignment. #}
+            unsafe { _mm_loadl_epi64((&self as *const Self).cast::<__m128i>()) }
+        {% else %}
+            let bits: u32 = unsafe { core::mem::transmute(self) };
+            unsafe { _mm_cvtsi32_si128(bits as i32) }
+        {% endif %}
+    }
+
+    {{ cfg_sse }}
+    #[inline(always)]
+    fn from_v(v: __m128i) -> Self {
+        {% if lane_bits == 16 %}
+            let mut out = Self::ZERO;
+            unsafe { _mm_storel_epi64((&mut out as *mut Self).cast::<__m128i>(), v) };
+            out
+        {% else %}
+            let bits = unsafe { _mm_cvtsi128_si32(v) } as u32;
+            unsafe { core::mem::transmute(bits) }
+        {% endif %}
+    }
+{% endif %}
 
     /// Returns a vector containing each element of `self` modified by a mapping function `f`.
     #[inline]
@@ -748,7 +903,27 @@ impl {{ self_t }} {
     #[inline]
     #[must_use]
     pub fn min(self, rhs: Self) -> Self {
-        {% if is_scalar %}
+        {% if is_narrow_int %}
+            {# `SMIN`, `UMIN`, `PMINSW` and `PMINUW` all give `a < b ? a : b`,
+               which is the rule of the scalar body below. No lane can overflow,
+               thus this body serves debug and release alike. #}
+            {{ cfg_neon }}
+            {
+                Self::from_v(unsafe { vmin_{{ neon_sfx }}(self.to_v(), rhs.to_v()) })
+            }
+            {{ cfg_sse }}
+            {
+                Self::from_v(unsafe { _mm_min_{{ sse_sfx }}(self.to_v(), rhs.to_v()) })
+            }
+            {{ cfg_soft }}
+            {
+                Self {
+                    {% for c in components %}
+                        {{ c }}: if self.{{ c }} < rhs.{{ c }} { self.{{ c }} } else { rhs.{{ c }} },
+                    {%- endfor %}
+                }
+            }
+        {% elif is_scalar %}
             Self {
                 {% for c in components %}
                     {{ c }}: if self.{{ c }} < rhs.{{ c }} { self.{{ c }} } else { rhs.{{ c }} },
@@ -777,7 +952,25 @@ impl {{ self_t }} {
     #[inline]
     #[must_use]
     pub fn max(self, rhs: Self) -> Self {
-        {% if is_scalar %}
+        {% if is_narrow_int %}
+            {# See `min`. This gives `a > b ? a : b`. #}
+            {{ cfg_neon }}
+            {
+                Self::from_v(unsafe { vmax_{{ neon_sfx }}(self.to_v(), rhs.to_v()) })
+            }
+            {{ cfg_sse }}
+            {
+                Self::from_v(unsafe { _mm_max_{{ sse_sfx }}(self.to_v(), rhs.to_v()) })
+            }
+            {{ cfg_soft }}
+            {
+                Self {
+                    {% for c in components %}
+                        {{ c }}: if self.{{ c }} > rhs.{{ c }} { self.{{ c }} } else { rhs.{{ c }} },
+                    {%- endfor %}
+                }
+            }
+        {% elif is_scalar %}
             Self {
                 {% for c in components %}
                     {{ c }}: if self.{{ c }} > rhs.{{ c }} { self.{{ c }} } else { rhs.{{ c }} },
@@ -1213,7 +1406,32 @@ impl {{ self_t }} {
     #[inline]
     #[must_use]
     pub fn abs(self) -> Self {
-        {% if is_scalar %}
+        {% if is_narrow_int %}
+            {# `ABS` and `PABSW` give the most negative value again when the input
+               is the most negative value, and scalar Rust does the same in
+               release. Do not use `vqabs_{{ neon_sfx }}`: it saturates to the
+               most positive value, and no x86-64 instruction agrees with that.
+               `tests/forbidden.rs` bans it.
+
+               `abs` panics in debug on the most negative value, thus the SIMD
+               body is for release only. #}
+            {{ cfg_neon_rel }}
+            {
+                Self::from_v(unsafe { vabs_{{ neon_sfx }}(self.to_v()) })
+            }
+            {{ cfg_sse_rel }}
+            {
+                Self::from_v(unsafe { _mm_abs_{{ sse_sfx }}(self.to_v()) })
+            }
+            {{ cfg_soft_rel }}
+            {
+                Self {
+                    {% for c in components %}
+                        {{ c }}: self.{{ c }}.abs(),
+                    {%- endfor %}
+                }
+            }
+        {% elif is_scalar %}
             Self {
                 {% for c in components %}
                     {%- if is_float %}
@@ -3240,7 +3458,28 @@ impl Mul for {{ self_t }} {
     type Output = Self;
     #[inline]
     fn mul(self, rhs: Self) -> Self {
-        {% if is_scalar %}
+        {% if has_narrow_mul %}
+            {# `MUL` and `PMULLW` keep the low half, and so does scalar Rust in
+               release. The low half is the same for signed and unsigned, thus
+               `_mm_mullo_epi16` serves both. 8-bit vectors do not come here:
+               x86-64 has no 8-bit packed multiply. #}
+            {{ cfg_neon_rel }}
+            {
+                Self::from_v(unsafe { vmul_{{ neon_sfx }}(self.to_v(), rhs.to_v()) })
+            }
+            {{ cfg_sse_rel }}
+            {
+                Self::from_v(unsafe { _mm_mullo_{{ sse_bits_sfx }}(self.to_v(), rhs.to_v()) })
+            }
+            {{ cfg_soft_rel }}
+            {
+                Self {
+                    {% for c in components %}
+                        {{ c }}: self.{{ c }}.mul(rhs.{{ c }}),
+                    {%- endfor %}
+                }
+            }
+        {% elif is_scalar %}
             Self {
                 {% for c in components %}
                     {{ c }}: self.{{ c }}.mul(rhs.{{ c }}),
@@ -3344,7 +3583,28 @@ impl Add for {{ self_t }} {
     type Output = Self;
     #[inline]
     fn add(self, rhs: Self) -> Self {
-        {% if is_scalar %}
+        {% if has_narrow_addsub %}
+            {# `ADD` and `PADDW` wrap, and so does scalar Rust in release. Do not
+               use `vqadd_{{ neon_sfx }}` or `_mm_adds_{{ sse_bits_sfx }}`: those
+               saturate, and `saturating_add` is a separate `const fn` that stays
+               scalar. `tests/forbidden.rs` bans them. #}
+            {{ cfg_neon_rel }}
+            {
+                Self::from_v(unsafe { vadd_{{ neon_sfx }}(self.to_v(), rhs.to_v()) })
+            }
+            {{ cfg_sse_rel }}
+            {
+                Self::from_v(unsafe { _mm_add_{{ sse_bits_sfx }}(self.to_v(), rhs.to_v()) })
+            }
+            {{ cfg_soft_rel }}
+            {
+                Self {
+                    {% for c in components %}
+                        {{ c }}: self.{{ c }}.add(rhs.{{ c }}),
+                    {%- endfor %}
+                }
+            }
+        {% elif is_scalar %}
             Self {
                 {% for c in components %}
                     {{ c }}: self.{{ c }}.add(rhs.{{ c }}),
@@ -3448,7 +3708,26 @@ impl Sub for {{ self_t }} {
     type Output = Self;
     #[inline]
     fn sub(self, rhs: Self) -> Self {
-        {% if is_scalar %}
+        {% if has_narrow_addsub %}
+            {# See `add`. `SUB` and `PSUBW` wrap. Do not use the saturating
+               `vqsub_{{ neon_sfx }}` or `_mm_subs_{{ sse_bits_sfx }}`. #}
+            {{ cfg_neon_rel }}
+            {
+                Self::from_v(unsafe { vsub_{{ neon_sfx }}(self.to_v(), rhs.to_v()) })
+            }
+            {{ cfg_sse_rel }}
+            {
+                Self::from_v(unsafe { _mm_sub_{{ sse_bits_sfx }}(self.to_v(), rhs.to_v()) })
+            }
+            {{ cfg_soft_rel }}
+            {
+                Self {
+                    {% for c in components %}
+                        {{ c }}: self.{{ c }}.sub(rhs.{{ c }}),
+                    {%- endfor %}
+                }
+            }
+        {% elif is_scalar %}
             Self {
                 {% for c in components %}
                     {{ c }}: self.{{ c }}.sub(rhs.{{ c }}),
@@ -3701,7 +3980,33 @@ impl Neg for {{ self_t }} {
     type Output = Self;
     #[inline]
     fn neg(self) -> Self {
-        {% if is_scalar %}
+        {# 16-bit only, for the reason given at `has_narrow_addsub`. Negate is
+           `0 - x`, and x86-64 writes it exactly that way, thus it is the same
+           operation as subtract. The 8-bit subtract measured 63 percent slower
+           with a hand-written body, thus 8-bit negate does not get one. This one
+           is inferred from the subtract measurement, not measured on its own. #}
+        {% if has_narrow_addsub %}
+            {# `NEG` gives the most negative value again when the input is the
+               most negative value, and so does scalar Rust in release. Do not
+               use `vqneg_{{ neon_sfx }}`, which saturates. x86-64 has no packed
+               negate, thus subtract from zero. #}
+            {{ cfg_neon_rel }}
+            {
+                Self::from_v(unsafe { vneg_{{ neon_sfx }}(self.to_v()) })
+            }
+            {{ cfg_sse_rel }}
+            {
+                Self::from_v(unsafe { _mm_sub_{{ sse_bits_sfx }}(_mm_setzero_si128(), self.to_v()) })
+            }
+            {{ cfg_soft_rel }}
+            {
+                Self {
+                    {% for c in components %}
+                        {{ c }}: self.{{ c }}.neg(),
+                    {%- endfor %}
+                }
+            }
+        {% elif is_scalar %}
             Self {
                 {% for c in components %}
                     {{ c }}: self.{{ c }}.neg(),
