@@ -2,7 +2,7 @@
 
 [![Build Status]][github-ci] [![Coverage Status]][coveralls.io]
 [![Latest Version]][crates.io] [![docs]][docs.rs]
-[![Minimum Supported Rust Version]][Rust 1.98.0]
+[![Minimum Supported Rust Version]][Rust 1.96.0]
 
 A simple and fast 3D math library for games and graphics.
 
@@ -36,10 +36,6 @@ A simple and fast 3D math library for games and graphics.
   * vectors: `I64Vec2`, `I64Vec3` and `I64Vec4`
 * `u64` types
   * vectors: `U64Vec2`, `U64Vec3` and `U64Vec4`
-* `isize` types
-  * vectors: `ISizeVec2`, `ISizeVec3` and `ISizeVec4`
-* `usize` types
-  * vectors: `USizeVec2`, `USizeVec3` and `USizeVec4`
 * `bool` types
   * vectors: `BVec2`, `BVec3` and `BVec4`
 
@@ -50,8 +46,8 @@ compile times.
 ### SIMD
 
 The `Vec3A`, `Vec4`, `Quat`, `Mat2`, `Mat3A`, `Mat4`, `Affine2` and `Affine3A`
-types use 128-bit wide SIMD vector types for storage on `x86`, `x86_64` and
-`wasm32`/`wasm64` architectures.  As a result, these types are all 16 byte aligned and
+types use 128-bit wide SIMD vector types for storage on `x86_64` and `aarch64`
+architectures.  As a result, these types are all 16 byte aligned and
 depending on the size of the type or the type's members, they may contain
 internal padding.  This results in some wasted space in the cases of `Vec3A`,
 `Mat3A`, `Affine2` and `Affine3A`.  However, the use of SIMD generally results
@@ -64,89 +60,45 @@ in better performance than scalar math.
 
 ### Enabling SIMD
 
-SIMD is supported on `x86`, `x86_64`, `wasm32` and `wasm64` targets.
+SIMD is supported on `x86_64` and `aarch64` targets.
 
-* `SSE2` is enabled by default on `x86_64` targets.
-* To enable `SSE2` on `x86` targets add `-C target-feature=+sse2` to
-  `RUSTFLAGS`.
+* `SSE2` is enabled by default on `x86_64` targets. This fork pins
+  `-C target-cpu=x86-64-v3`, which additionally provides `FMA` and `SSE4.1`.
 * `NEON` is enabled by default on `aarch64` targets.
-* To enable `simd128` on `wasm32` or `wasm64` targets add `-C target-feature=+simd128` to
-  `RUSTFLAGS`.
-* Experimental [portable simd] support can be enabled with the `core-simd`
-  feature. This requires the nightly compiler as it is still unstable in Rust.
 
-Note that SIMD on `wasm32`/`wasm64` passes tests but has not been benchmarked,
-performance may or may not be better than scalar math.
+Both backends are built to produce bit-identical results. See `rewrite.md` for
+the rules that make this hold, and the tests that enforce it.
 
-[portable simd]: https://doc.rust-lang.org/core/simd/index.html
+### Math functions
 
-### `no_std` support
+The exact operations (`sqrt`, `abs`, `copysign`, `floor`, `ceil`, `trunc`,
+`mul_add`) use the core intrinsics. IEEE 754 defines each result, so every
+target agrees.
 
-`no_std` support can be enabled by compiling with `--no-default-features` to
-disable `std` support and `--features libm` for math functions that are only
-defined in `std`. For example:
+The transcendental functions (`sin`, `cos`, `tan`, `exp`, `ln`, `log2`, `powf`,
+`atan2`) do **not** call the math library of the operating system, because that
+gives different results on each platform. They use one pinned version of the
+pure-Rust [`libm`] crate on every target. See `rewrite.md`.
 
-```toml
-[dependencies]
-glam = { version = "0.33.2", default-features = false, features = ["libm"] }
-```
-
-To support both `std` and `no_std` builds in project, you can use the following
-in your `Cargo.toml`:
-
-```toml
-[features]
-default = ["std"]
-
-std = ["glam/std"]
-libm = ["glam/libm"]
-
-[dependencies]
-glam = { version = "0.33.2", default-features = false }
-```
-
-Alternatively, you can use the `nostd-libm` feature. This will always include a
-`libm` dependency, but allows the user to still override it with `std` if they
-prefer. This will allow your crate to compile with default features disabled,
-instead of forcing the user to enable either `std` or `libm`.
-
-```toml
-[features]
-default = ["std"]
-
-std = ["glam/std"]
-libm = ["glam/libm"]
-
-[dependencies]
-glam = { version = "0.33.2", default-features = false, features = ["nostd-libm"] }
-```
+`round` uses the round-to-nearest rule with ties to even, not the
+`f32::round` rule, because x86-64 has no instruction for ties away from zero.
 
 ### Feature gates
 
-* `std` - the default feature, has no dependencies.
-* `all-types` - a default feature, enables `float-types`, `integer-types`
-   and `size-types`
+* `all-types` - a default feature, enables `float-types` and `integer-types`
 * `float-types` - enables `f64` types
 * `integer-types` - enables `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`
    and `u64` types
-* `size-types` - enables `isize` and `usize` types
-* `f64`, `i8`, `i16`, `i32`, `i64`, `isize`, `u8`, `u16`, `u32`, `u64`, `usize`
-  - enables glam types for the given intrinsic type
-* `nostd-libm` - uses `libm` math functions if `std` is not available
-* `scalar-math` - compiles with SIMD support disabled
+* `f64`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`
+  - enables glam types for the given intrinsic type. Turn off the ones you do
+  not use to build faster.
+* `scalar-math` - builds the scalar reference implementation instead of SSE2 or
+  NEON. This is a test reference only, and it is not for shipping. The test in
+  `tests/golden_bits.rs` uses it to tell which SIMD backend is wrong when the
+  two disagree.
 * `debug-glam-assert` - adds assertions in debug builds which check the validity
   of parameters passed to `glam` to help catch runtime errors
 * `glam-assert` - adds validation assertions to all builds
-* `cuda` - forces `glam` types to match expected [cuda alignment]
-* `fast-math` - By default, glam attempts to provide bit-for-bit identical
-  results on all platforms. Using this feature will enable platform specific
-  optimizations that may not be identical to other platforms. **Intermediate
-  libraries should not use this feature and defer the decision to the final
-  binary build**.
-* `core-simd` - enables SIMD support via the [portable simd] module. This is an
-  unstable feature which requires a nightly Rust toolchain and `std` support.
-
-[cuda alignment]: https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#built-in-vector-types
 
 ### Optional features
 
@@ -154,7 +106,6 @@ glam = { version = "0.33.2", default-features = false, features = ["nostd-libm"]
 * [`arbitrary`] - `arbitrary` trait implementations for `glam` types.
 * [`bytemuck`] - for casting into slices of bytes
 * [`encase`] - `encase` trait implementations for `glam` types.
-* [`libm`] - uses `libm` math functions instead of `std`
 * [`mint`] - for interoperating with other 3D math libraries
 * [`rand`] - implementations of `Distribution` trait for all `glam` types.
 * [`rkyv`] - implementations of `Archive`, `Serialize` and `Deserialize` for all
@@ -184,7 +135,7 @@ glam = { version = "0.33.2", default-features = false, features = ["nostd-libm"]
 
 ### Minimum Supported Rust Version (MSRV)
 
-The minimum supported version of Rust for `glam` is `1.98.0`.
+The minimum supported version of Rust for `glam` is `1.96.0`.
 
 ## Conventions
 
@@ -315,5 +266,5 @@ See [ATTRIBUTION.md] for details.
 [crates.io]: https://crates.io/crates/glam/
 [docs]: https://docs.rs/glam/badge.svg
 [docs.rs]: https://docs.rs/glam/
-[Minimum Supported Rust Version]: https://img.shields.io/badge/Rust-1.98.0-blue?color=fc8d62&logo=rust
-[Rust 1.98.0]: https://github.com/rust-lang/rust/blob/master/RELEASES.md#version-1980-2026-08-20
+[Minimum Supported Rust Version]: https://img.shields.io/badge/Rust-1.96.0-blue?color=fc8d62&logo=rust
+[Rust 1.96.0]: https://github.com/rust-lang/rust/blob/master/RELEASES.md#version-1960-2026-05-28

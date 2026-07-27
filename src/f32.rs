@@ -7,69 +7,29 @@ pub(crate) mod math;
 mod vec2;
 mod vec3;
 
-#[cfg(all(feature = "core-simd", not(feature = "scalar-math")))]
-mod coresimd;
-
 #[cfg(any(
-    not(any(
-        feature = "core-simd",
-        target_arch = "aarch64",
-        target_feature = "sse2",
-        target_feature = "simd128"
-    )),
+    not(any(target_arch = "aarch64", target_arch = "x86_64")),
     feature = "scalar-math"
 ))]
 mod scalar;
 
-#[cfg(all(
-    target_arch = "aarch64",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-mod neon;
+#[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+mod aarch64;
 
-#[cfg(all(
-    target_feature = "sse2",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-mod sse2;
-
-#[cfg(all(
-    target_feature = "simd128",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-mod wasm;
+#[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+mod x86_64;
 
 #[cfg(any(
-    not(any(
-        feature = "core-simd",
-        target_arch = "aarch64",
-        target_feature = "sse2",
-        target_feature = "simd128"
-    )),
+    not(any(target_arch = "aarch64", target_arch = "x86_64")),
     feature = "scalar-math"
 ))]
 use scalar::*;
 
-#[cfg(all(
-    target_arch = "aarch64",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-use neon::*;
+#[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+use aarch64::*;
 
-#[cfg(all(
-    target_feature = "sse2",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-use sse2::*;
-
-#[cfg(all(
-    target_feature = "simd128",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-use wasm::*;
-
-#[cfg(all(feature = "core-simd", not(feature = "scalar-math")))]
-use coresimd::*;
+#[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+use x86_64::*;
 
 pub use affine2::Affine2;
 pub use affine3::Affine3;
@@ -84,11 +44,10 @@ pub use vec3::{vec3, Vec3};
 pub use vec3a::{vec3a, Vec3A};
 pub use vec4::{vec4, Vec4};
 
-#[cfg(not(target_arch = "spirv"))]
 mod test {
     use super::*;
 
-    #[cfg(all(not(feature = "cuda"), feature = "scalar-math"))]
+    #[cfg(feature = "scalar-math")]
     mod const_test_affine2 {
         const_assert_eq!(
             core::mem::align_of::<super::Vec2>(),
@@ -109,7 +68,7 @@ mod test {
             core::mem::align_of::<super::Vec2>(),
             core::mem::align_of::<super::Mat2>()
         );
-        #[cfg(not(any(feature = "scalar-math", target_arch = "spirv")))]
+        #[cfg(not(feature = "scalar-math"))]
         const_assert_eq!(16, core::mem::align_of::<super::Mat2>());
         const_assert_eq!(16, core::mem::size_of::<super::Mat2>());
     }
@@ -141,19 +100,16 @@ mod test {
             core::mem::align_of::<f32>(),
             core::mem::align_of::<super::Quat>()
         );
-        #[cfg(not(any(feature = "scalar-math", target_arch = "spirv")))]
+        #[cfg(not(feature = "scalar-math"))]
         const_assert_eq!(16, core::mem::align_of::<super::Quat>());
         const_assert_eq!(16, core::mem::size_of::<super::Quat>());
     }
 
     mod const_test_vec2 {
-        #[cfg(not(feature = "cuda"))]
         const_assert_eq!(
             core::mem::align_of::<f32>(),
             core::mem::align_of::<super::Vec2>()
         );
-        #[cfg(feature = "cuda")]
-        const_assert_eq!(8, core::mem::align_of::<super::Vec2>());
         const_assert_eq!(8, core::mem::size_of::<super::Vec2>());
     }
 
@@ -171,7 +127,7 @@ mod test {
     }
 
     mod const_test_vec4 {
-        #[cfg(all(feature = "scalar-math", not(feature = "cuda")))]
+        #[cfg(feature = "scalar-math")]
         const_assert_eq!(
             core::mem::align_of::<f32>(),
             core::mem::align_of::<super::Vec4>()

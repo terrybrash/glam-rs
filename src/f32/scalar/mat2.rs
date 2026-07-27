@@ -26,7 +26,6 @@ pub const fn mat2(x_axis: Vec2, y_axis: Vec2) -> Mat2 {
     derive(FromBytes, Immutable, IntoBytes, KnownLayout)
 )]
 #[cfg_attr(not(feature = "scalar-math"), repr(align(16)))]
-#[cfg_attr(feature = "cuda", repr(align(8)))]
 #[repr(C)]
 pub struct Mat2 {
     pub x_axis: Vec2,

@@ -13,14 +13,10 @@
     {% endif %}
     {% set align = 16 %}
     {% set is_u32 = true %}
-    {% if is_sse2 %}
+    {% if is_x86_64 %}
         {% set simd_t = "__m128" %}
-    {% elif is_wasm %}
-        {% set simd_t = "v128" %}
-    {% elif is_neon %}
+    {% elif is_aarch64 %}
         {% set simd_t = "uint32x4_t" %}
-    {% elif is_coresimd %}
-        {% set simd_t = "mask32x4" %}
     {% endif %}
 {% endif %}
 
@@ -29,23 +25,13 @@
 use core::fmt;
 use core::ops::*;
 
-{% if is_sse2 %}
-#[cfg(target_arch = "x86")]
-use core::arch::x86::*;
-#[cfg(target_arch = "x86_64")]
+{% if is_x86_64 %}
 use core::arch::x86_64::*;
-{% elif is_wasm %}
-#[cfg(target_arch = "wasm32")]
-use core::arch::wasm32::*;
-#[cfg(target_arch = "wasm64")]
-use core::arch::wasm64::*;
-{% elif is_neon %}
+{% elif is_aarch64 %}
 use core::arch::aarch64::*;
-{% elif is_coresimd %}
-use core::simd::*;
 {% endif %}
 
-{% if is_sse2 or is_neon or is_coresimd %}
+{% if is_x86_64 or is_aarch64 %}
 #[repr(C)]
 union UnionCast {
     a: [u32; 4],
@@ -80,7 +66,6 @@ pub const fn {{ self_t | lower }}(
 {%- endif %}
 {%- if is_scalar %}
 #[repr(C, align({{ align }}))]
-#[cfg_attr(target_arch = "spirv", rust_gpu::vector::v1)]
 pub struct {{ self_t }}
 {
 {% for c in components %}
@@ -121,7 +106,7 @@ impl {{ self_t }} {
                     {{ c }}: MASK[{{ c }} as usize],
                 {%- endfor %}
             }
-        {% elif is_sse2 or is_neon or is_coresimd %}
+        {% elif is_x86_64 or is_aarch64 %}
             unsafe {
                 UnionCast { a: [
                     MASK[x as usize],
@@ -134,17 +119,6 @@ impl {{ self_t }} {
                     {% endif %}
                 ] }.v
             }
-        {% elif is_wasm %}
-            Self(u32x4(
-                MASK[x as usize],
-                MASK[y as usize],
-                MASK[z as usize],
-                {% if dim == 3 %}
-                    0,
-                {% elif dim == 4 %}
-                    MASK[w as usize],
-                {% endif %}
-            ))
         {% endif %}
     }
 
@@ -193,19 +167,13 @@ impl {{ self_t }} {
                     ((self.{{ c }} & 0x1) << {{ loop.index0 }}) {% if not loop.last %} | {% endif %}
                 {% endif %}
             {% endfor %}
-        {% elif is_sse2 %}
+        {% elif is_x86_64 %}
             {% if dim == 3 %}
                 unsafe { (_mm_movemask_ps(self.0) as u32) & 0x7 }
             {% elif dim == 4 %}
                 unsafe { _mm_movemask_ps(self.0) as u32 }
             {% endif %}
-        {% elif is_wasm %}
-            {% if dim == 3 %}
-                (u32x4_bitmask(self.0) & 0x7) as u32
-            {% elif dim == 4 %}
-                u32x4_bitmask(self.0) as u32
-            {% endif %}
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             {% if dim == 3 %}
                 let movemask = unsafe {
             {% elif dim == 4 %}
@@ -223,12 +191,6 @@ impl {{ self_t }} {
                 movemask & 0x7
             {% elif dim == 4 %}
                 }
-            {% endif %}
-        {% elif is_coresimd %}
-            {% if dim == 3 %}
-                (self.0.to_bitmask() & 0x7) as u32
-            {% elif dim == 4 %}
-                self.0.to_bitmask() as u32
             {% endif %}
         {% else %}
             unimplemented!()
@@ -283,10 +245,7 @@ impl {{ self_t }} {
     #[inline]
     #[must_use]
     pub fn test(self, index: usize) -> bool {
-        {% if is_coresimd %}
-            assert!(index < {{ dim }}, "index out of bounds");
-            self.0.test(index)
-        {% else %}
+        
             match index {
                 {% for c in components %}
                     {%- if is_scalar and is_bool %}
@@ -299,7 +258,7 @@ impl {{ self_t }} {
                 {%- endfor %}
                 _ => panic!("index out of bounds")
             }
-        {% endif %}
+        
     }
 
     /// Sets the element at `index`.
@@ -318,12 +277,7 @@ impl {{ self_t }} {
                 {%- endfor %}
                 _ => panic!("index out of bounds")
             }
-        {% elif is_coresimd %}
-            {% if dim < 4 %}
-                assert!(index < {{ dim }}, "index out of bounds");
-            {%- endif %}
-            self.0.set(index, value)
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             self.0 = match index { 
                 {% for c in components %}
                     {{ loop.index0 }} => unsafe {
@@ -432,14 +386,10 @@ impl BitAnd for {{ self_t }} {
                     {{ c }}: self.{{ c }} & rhs.{{ c }},
                 {%- endfor %}
             }
-        {% elif is_sse2 %}
+        {% elif is_x86_64 %}
             Self(unsafe { _mm_and_ps(self.0, rhs.0) })
-        {% elif is_wasm %}
-            Self(v128_and(self.0, rhs.0))
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             Self(unsafe { vandq_u32(self.0, rhs.0) })
-        {% elif is_coresimd %}
-            Self(self.0 & rhs.0)
         {% else %}
             unimplemented!()
         {% endif %}
@@ -460,14 +410,10 @@ impl BitOr for {{ self_t }} {
                     {{ c }}: self.{{ c }} | rhs.{{ c }},
                 {%- endfor %}
             }
-        {% elif is_sse2 %}
+        {% elif is_x86_64 %}
             Self(unsafe { _mm_or_ps(self.0, rhs.0) })
-        {% elif is_wasm %}
-            Self(v128_or(self.0, rhs.0))
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             Self(unsafe { vorrq_u32(self.0, rhs.0) })
-        {% elif is_coresimd %}
-            Self(self.0 | rhs.0)
         {% else %}
             unimplemented!()
         {% endif %}
@@ -488,14 +434,10 @@ impl BitXor for {{ self_t }} {
                     {{ c }}: self.{{ c }} ^ rhs.{{ c }},
                 {%- endfor %}
             }
-        {% elif is_sse2 %}
+        {% elif is_x86_64 %}
             Self(unsafe { _mm_xor_ps(self.0, rhs.0) })
-        {% elif is_wasm %}
-            Self(v128_xor(self.0, rhs.0))
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             Self(unsafe { veorq_u32(self.0, rhs.0) })
-        {% elif is_coresimd %}
-            Self(self.0 ^ rhs.0)
         {% else %}
             unimplemented!()
         {% endif %}
@@ -516,16 +458,12 @@ impl Not for {{ self_t }} {
                     {{ c }}: !self.{{ c }},
                 {%- endfor %}
             }
-        {% elif is_sse2 %}
+        {% elif is_x86_64 %}
             Self(unsafe {
                 _mm_andnot_ps(self.0, _mm_set_ps1(f32::from_bits(0xff_ff_ff_ff)))
             })
-        {% elif is_wasm %}
-            Self(v128_not(self.0))
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             Self(unsafe { vmvnq_u32(self.0) })
-        {% elif is_coresimd %}
-            Self(!self.0)
         {% else %}
             unimplemented!()
         {% endif %}

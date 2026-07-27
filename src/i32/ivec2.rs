@@ -23,12 +23,6 @@ use crate::I64Vec2;
 #[cfg(feature = "u64")]
 use crate::U64Vec2;
 
-#[cfg(feature = "isize")]
-use crate::ISizeVec2;
-
-#[cfg(feature = "usize")]
-use crate::USizeVec2;
-
 use core::fmt;
 use core::iter::{Product, Sum};
 use core::{f32, ops::*};
@@ -50,9 +44,7 @@ pub const fn ivec2(x: i32, y: i32) -> IVec2 {
     feature = "zerocopy",
     derive(FromBytes, Immutable, IntoBytes, KnownLayout)
 )]
-#[cfg_attr(feature = "cuda", repr(align(8)))]
 #[repr(C)]
-#[cfg_attr(target_arch = "spirv", rust_gpu::vector::v1)]
 pub struct IVec2 {
     pub x: i32,
     pub y: i32,
@@ -594,22 +586,6 @@ impl IVec2 {
     #[must_use]
     pub fn as_u64vec2(self) -> crate::U64Vec2 {
         crate::U64Vec2::new(self.x as u64, self.y as u64)
-    }
-
-    /// Casts all elements of `self` to `isize`.
-    #[cfg(feature = "isize")]
-    #[inline]
-    #[must_use]
-    pub fn as_isizevec2(self) -> crate::ISizeVec2 {
-        crate::ISizeVec2::new(self.x as isize, self.y as isize)
-    }
-
-    /// Casts all elements of `self` to `usize`.
-    #[cfg(feature = "usize")]
-    #[inline]
-    #[must_use]
-    pub fn as_usizevec2(self) -> crate::USizeVec2 {
-        crate::USizeVec2::new(self.x as usize, self.y as usize)
     }
 
     /// Returns a vector containing the wrapping addition of `self` and `rhs`.
@@ -2995,26 +2971,6 @@ impl TryFrom<U64Vec2> for IVec2 {
 
     #[inline]
     fn try_from(v: U64Vec2) -> Result<Self, Self::Error> {
-        Ok(Self::new(i32::try_from(v.x)?, i32::try_from(v.y)?))
-    }
-}
-
-#[cfg(feature = "isize")]
-impl TryFrom<ISizeVec2> for IVec2 {
-    type Error = core::num::TryFromIntError;
-
-    #[inline]
-    fn try_from(v: ISizeVec2) -> Result<Self, Self::Error> {
-        Ok(Self::new(i32::try_from(v.x)?, i32::try_from(v.y)?))
-    }
-}
-
-#[cfg(feature = "usize")]
-impl TryFrom<USizeVec2> for IVec2 {
-    type Error = core::num::TryFromIntError;
-
-    #[inline]
-    fn try_from(v: USizeVec2) -> Result<Self, Self::Error> {
         Ok(Self::new(i32::try_from(v.x)?, i32::try_from(v.y)?))
     }
 }

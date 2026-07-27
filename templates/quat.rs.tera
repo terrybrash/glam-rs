@@ -2,13 +2,9 @@
 
 {% if not is_scalar %}
     {% set is_simd = true %}
-    {% if is_sse2 %}
+    {% if is_x86_64 %}
         {% set simd_t = "__m128" %}
-    {% elif is_wasm %}
-        {% set simd_t = "v128" %}
-    {% elif is_coresimd %}
-        {% set simd_t = "f32x4" %}
-    {% elif is_neon %}
+    {% elif is_aarch64 %}
         {% set simd_t = "float32x4_t" %}
     {% endif %}
 {% endif %}
@@ -41,14 +37,10 @@ use crate::{
     {% elif scalar_t == "f64" %}
         DMat3, DMat4, DVec2, DVec3, DVec4, Quat,
     {% endif %}
-    {% if is_sse2 %}
-        sse2::*,
-    {% elif is_wasm %}
-        wasm::*,
-    {% elif is_coresimd %}
-        coresimd::*,
-    {% elif is_neon %}
-        neon::*,
+    {% if is_x86_64 %}
+        x86_64::*,
+    {% elif is_aarch64 %}
+        aarch64::*,
     {% endif %}
 };
 {% if scalar_t == "f32" %}
@@ -56,19 +48,9 @@ use crate::{
 use crate::DQuat;
 {% endif %}
 
-{% if is_sse2 %}
-#[cfg(target_arch = "x86")]
-use core::arch::x86::*;
-#[cfg(target_arch = "x86_64")]
+{% if is_x86_64 %}
 use core::arch::x86_64::*;
-{% elif is_wasm %}
-#[cfg(target_arch = "wasm32")]
-use core::arch::wasm32::*;
-#[cfg(target_arch = "wasm64")]
-use core::arch::wasm64::*;
-{% elif is_coresimd %}
-use core::simd::*;
-{% elif is_neon %}
+{% elif is_aarch64 %}
 use core::arch::aarch64::*;
 {% endif %}
 
@@ -81,12 +63,12 @@ use core::ops::{
     Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign
 };
 
-{% if not is_coresimd %}
+
 #[cfg(feature = "zerocopy")]
 use zerocopy_derive::*;
-{% endif %}
 
-{% if is_sse2 or is_neon %}
+
+{% if is_x86_64 or is_aarch64 %}
 #[repr(C)]
 union UnionCast {
     a: [f32; 4],
@@ -117,15 +99,14 @@ pub const fn {{ self_t | lower }}(x: {{ scalar_t }}, y: {{ scalar_t }}, z: {{ sc
 {%- endif %}
 #[derive(Clone, Copy)]
 #[cfg_attr(feature = "bytemuck", derive(bytemuck::Pod, bytemuck::Zeroable))]
-{%- if not is_coresimd %}
+
 #[cfg_attr(feature = "zerocopy", derive(FromBytes, Immutable, IntoBytes, KnownLayout))]
-{%- endif %}
+
 {%- if is_scalar %}
 {%- if scalar_t == "f32" %}
 #[cfg_attr(not(feature = "scalar-math"), repr(align(16)))]
 {%- endif %}
 #[repr(C)]
-#[cfg_attr(target_arch = "spirv", rust_gpu::vector::v1)]
 pub struct {{ self_t }}{
     pub x: {{ scalar_t }},
     pub y: {{ scalar_t }},
@@ -136,6 +117,38 @@ pub struct {{ self_t }}{
 #[repr(transparent)]
 pub struct {{ self_t }}(pub(crate) {{ simd_t }});
 {%- endif %}
+
+{% if scalar_t == "f32" %}
+/// Returns the sine of the angle in each lane.
+///
+/// This is the 11-degree minimax approximation from DirectXMath `XMVectorSin`.
+/// It is an approximation, not a correctly rounded sine, but every step is a
+/// multiply, an add, a compare or a select, so every backend gives the same
+/// bits and it costs far less than three scalar calls into `libm`. rewrite.md
+/// permits a fixed function of our own for this reason.
+///
+/// The error grows as the input moves away from `[-PI, PI]`.
+#[inline]
+fn sin_vec4(v: Vec4) -> Vec4 {
+    use core::f32::consts::{FRAC_PI_2, PI, TAU};
+    const RECIP_TAU: f32 = 0.159_154_94;
+
+    // Bring the angle within [-PI, PI].
+    let x = v - Vec4::splat(TAU) * (v * Vec4::splat(RECIP_TAU)).round();
+
+    // Map into [-PI/2, PI/2], where sin(y) == sin(x).
+    let reflected = Vec4::splat(PI).copysign(x) - x;
+    let x = Vec4::select(x.abs().cmple(Vec4::splat(FRAC_PI_2)), x, reflected);
+
+    let x2 = x * x;
+    let mut r = Vec4::splat(-2.388_985_9e-8).mul_add(x2, Vec4::splat(2.752_556_2e-6));
+    r = r.mul_add(x2, Vec4::splat(-0.000_198_408_74));
+    r = r.mul_add(x2, Vec4::splat(0.008_333_331));
+    r = r.mul_add(x2, Vec4::splat(-0.166_666_67));
+    r = r.mul_add(x2, Vec4::ONE);
+    r * x
+}
+{% endif %}
 
 impl {{ self_t }} {
     /// All zeros.
@@ -163,13 +176,9 @@ impl {{ self_t }} {
     pub const fn from_xyzw(x: {{ scalar_t }}, y: {{ scalar_t }}, z: {{ scalar_t }}, w: {{ scalar_t }}) -> Self {
         {% if is_scalar %}
             Self { x, y, z, w }
-        {% elif is_sse2 %}
+        {% elif is_x86_64 %}
             unsafe { UnionCast { a: [x, y, z, w] }.v }
-        {% elif is_wasm %}
-            Self(f32x4(x, y, z, w))
-        {% elif is_coresimd %}
-            Self(f32x4::from_array([x, y, z, w]))
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             unsafe { UnionCast { a: [x, y, z, w] }.v }
         {% else %}
             unimplemented!()
@@ -185,11 +194,9 @@ impl {{ self_t }} {
     #[inline]
     #[must_use]
     pub const fn from_array(a: [{{ scalar_t }}; 4]) -> Self {
-        {% if is_coresimd %}
-            Self(f32x4::from_array(a))
-        {% else %}
+        
             Self::from_xyzw(a[0], a[1], a[2], a[3])
-        {% endif %}
+        
     }
 
     /// Creates a new rotation quaternion from a 4D vector.
@@ -221,10 +228,10 @@ impl {{ self_t }} {
     #[inline]
     #[must_use]
     pub fn from_slice(slice: &[{{ scalar_t }}]) -> Self {
-        {% if is_sse2 %}
+        {% if is_x86_64 %}
             assert!(slice.len() >= 4);
             Self(unsafe { _mm_loadu_ps(slice.as_ptr()) })
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             assert!(slice.len() >= 4);
             Self(unsafe { vld1q_f32(slice.as_ptr()) })
         {% else %}
@@ -239,10 +246,10 @@ impl {{ self_t }} {
     /// Panics if `slice` length is less than 4.
     #[inline]
     pub fn write_to_slice(self, slice: &mut [{{ scalar_t }}]) {
-        {% if is_sse2 %}
+        {% if is_x86_64 %}
             assert!(slice.len() >= 4);
             unsafe { _mm_storeu_ps(slice.as_mut_ptr(), self.0) }
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             assert!(slice.len() >= 4);
             unsafe { vst1q_f32(slice.as_mut_ptr(), self.0) }
         {% else %}
@@ -463,7 +470,13 @@ impl {{ self_t }} {
         if dot > ONE_MINUS_EPS {
             // 0° singularity: from ≈ to
             Self::IDENTITY
-        } else if dot < -ONE_MINUS_EPS {
+        // The half-turn test includes the boundary, but the 0° test above does
+        // not. `from.dot(-from)` can land exactly on `-ONE_MINUS_EPS`, and a
+        // strict `<` then sends it to the general branch, where `cross` is
+        // exactly zero and `1.0 + dot` is near zero, so `normalize` gives the
+        // identity instead of a half turn. The general branch is safe at the 0°
+        // boundary, where `1.0 + dot` is near 2, so that test stays strict.
+        } else if dot <= -ONE_MINUS_EPS {
             // 180° singularity: from ≈ -to
             use core::{{ scalar_t }}::consts::PI; // half a turn = 𝛕/2 = 180°
             Self::from_axis_angle(from.any_orthonormal_vector(), PI)
@@ -658,16 +671,10 @@ impl {{ self_t }} {
     pub fn conjugate(self) -> Self {
         {% if is_scalar %}
             Self { x: -self.x, y: -self.y, z: -self.z, w: self.w }
-        {% elif is_sse2 %}
+        {% elif is_x86_64 %}
             const SIGN: __m128 = m128_from_f32x4([-0.0, -0.0, -0.0, 0.0]);
             Self(unsafe { _mm_xor_ps(self.0, SIGN) })
-        {% elif is_wasm %}
-            const SIGN: v128 = v128_from_f32x4([-1.0, -1.0, -1.0, 1.0]);
-            Self(f32x4_mul(self.0, SIGN))
-        {% elif is_coresimd %}
-            const SIGN: f32x4 = f32x4::from_array([-1.0, -1.0, -1.0, 1.0]);
-            Self(self.0.mul(SIGN))
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             const SIGN: float32x4_t = f32x4_from_array([-1.0, -1.0, -1.0, 1.0]);
             Self(unsafe { vmulq_f32(self.0, SIGN) })
         {% else %}
@@ -872,7 +879,7 @@ impl {{ self_t }} {
             let dot = self.dot(end);
             let bias = if dot >= 0.0 { 1.0 } else { -1.0 };
             self.lerp_impl(end * bias, s)
-        {% elif is_sse2 %}
+        {% elif is_x86_64 %}
             const NEG_ZERO: __m128 = m128_from_f32x4([-0.0; 4]);
             unsafe {
                 let dot = dot4_into_m128(self.0, end.0);
@@ -881,21 +888,7 @@ impl {{ self_t }} {
                 let bias = _mm_and_ps(dot, NEG_ZERO);
                 self.lerp_impl(Self(_mm_xor_ps(end.0, bias)), s)
             }
-        {% elif is_wasm %}
-            const NEG_ZERO: v128 = v128_from_f32x4([-0.0; 4]);
-            let dot = dot4_into_v128(self.0, end.0);
-            // Calculate the bias, if the dot product is positive or zero, there is no bias
-            // but if it is negative, we want to flip the 'end' rotation XYZW components
-            let bias = v128_and(dot, NEG_ZERO);
-            self.lerp_impl(Self(v128_xor(end.0, bias)), s)
-        {% elif is_coresimd %}
-            const NEG_ZERO: f32x4 = f32x4::from_array([-0.0; 4]);
-            let dot = dot4_into_f32x4(self.0, end.0);
-            // Calculate the bias, if the dot product is positive or zero, there is no bias
-            // but if it is negative, we want to flip the 'end' rotation XYZW components
-            let bias = f32x4_bitand(dot, NEG_ZERO);
-            self.lerp_impl(Self(f32x4_bitxor(end.0, bias)), s)
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             const NEG_ZERO: float32x4_t = f32x4_from_array([-0.0; 4]);
             unsafe {
                 let dot = dot4_into_f32x4(self.0, end.0);
@@ -914,29 +907,17 @@ impl {{ self_t }} {
     #[must_use]
     fn slerp_impl(self, end: Self, dot: {{ scalar_t }}, s: {{ scalar_t }}) -> Self {
         let theta = math::acos_approx(dot);
-        {% if is_sse2 %}
-            let x = 1.0 - s;
-            let y = s;
-            let z = 1.0;
-
-            unsafe {
-                let tmp = _mm_mul_ps(_mm_set_ps1(theta), _mm_set_ps(0.0, z, y, x));
-                let tmp = m128_sin(tmp);
-
-                let scale1 = _mm_shuffle_ps(tmp, tmp, 0b00_00_00_00);
-                let scale2 = _mm_shuffle_ps(tmp, tmp, 0b01_01_01_01);
-                let theta_sin = _mm_shuffle_ps(tmp, tmp, 0b10_10_10_10);
-
-                Self(_mm_div_ps(
-                    _mm_add_ps(_mm_mul_ps(self.0, scale1), _mm_mul_ps(end.0, scale2)),
-                    theta_sin,
-                ))
-            }
+        {% if scalar_t == "f32" %}
+        // The three sines come from one four-lane evaluation. Every step of
+        // `sin_vec4` is a multiply, an add, a compare or a select, so SSE2,
+        // NEON and the scalar reference all give the same bits. See rewrite.md.
+        let sins = sin_vec4(Vec4::splat(theta) * Vec4::new(1.0 - s, s, 1.0, 0.0));
+        ((self * sins.x) + (end * sins.y)) / sins.z
         {% else %}
-            let scale1 = math::sin(theta * (1.0 - s));
-            let scale2 = math::sin(theta * s);
-            let theta_sin = math::sin(theta);
-            ((self * scale1) + (end * scale2)) * (1.0 / theta_sin)
+        let scale1 = math::sin(theta * (1.0 - s));
+        let scale2 = math::sin(theta * s);
+        let theta_sin = math::sin(theta);
+        ((self * scale1) + (end * scale2)) / theta_sin
         {% endif %}
     }
 
@@ -1049,7 +1030,7 @@ impl {{ self_t }} {
                 w0 * z1 + x0 * y1 - y0 * x1 + z0 * w1,
                 w0 * w1 - x0 * x1 - y0 * y1 - z0 * z1,
             )
-        {% elif is_sse2 %}
+        {% elif is_x86_64 %}
             // Based on https://github.com/nfrechette/rtm `rtm::quat_mul`
             const CONTROL_WZYX: __m128 = m128_from_f32x4([1.0, -1.0, 1.0, -1.0]);
             const CONTROL_ZWXY: __m128 = m128_from_f32x4([1.0, 1.0, -1.0, -1.0]);
@@ -1085,72 +1066,7 @@ impl {{ self_t }} {
 
                 Self(_mm_add_ps(result0, result1))
             }
-        {% elif is_wasm %}
-            let lhs = self.0;
-            let rhs = rhs.0;
-
-            const CONTROL_WZYX: v128 = v128_from_f32x4([1.0, -1.0, 1.0, -1.0]);
-            const CONTROL_ZWXY: v128 = v128_from_f32x4([1.0, 1.0, -1.0, -1.0]);
-            const CONTROL_YXWZ: v128 = v128_from_f32x4([-1.0, 1.0, 1.0, -1.0]);
-
-            let r_xxxx = i32x4_shuffle::<0, 0, 4, 4>(lhs, lhs);
-            let r_yyyy = i32x4_shuffle::<1, 1, 5, 5>(lhs, lhs);
-            let r_zzzz = i32x4_shuffle::<2, 2, 6, 6>(lhs, lhs);
-            let r_wwww = i32x4_shuffle::<3, 3, 7, 7>(lhs, lhs);
-
-            let lxrw_lyrw_lzrw_lwrw = f32x4_mul(r_wwww, rhs);
-            let l_wzyx = i32x4_shuffle::<3, 2, 5, 4>(rhs, rhs);
-
-            let lwrx_lzrx_lyrx_lxrx = f32x4_mul(r_xxxx, l_wzyx);
-            let l_zwxy = i32x4_shuffle::<1, 0, 7, 6>(l_wzyx, l_wzyx);
-
-            let lwrx_nlzrx_lyrx_nlxrx = f32x4_mul(lwrx_lzrx_lyrx_lxrx, CONTROL_WZYX);
-
-            let lzry_lwry_lxry_lyry = f32x4_mul(r_yyyy, l_zwxy);
-            let l_yxwz = i32x4_shuffle::<3, 2, 5, 4>(l_zwxy, l_zwxy);
-
-            let lzry_lwry_nlxry_nlyry = f32x4_mul(lzry_lwry_lxry_lyry, CONTROL_ZWXY);
-
-            let lyrz_lxrz_lwrz_lzrz = f32x4_mul(r_zzzz, l_yxwz);
-            let result0 = f32x4_add(lxrw_lyrw_lzrw_lwrw, lwrx_nlzrx_lyrx_nlxrx);
-
-            let nlyrz_lxrz_lwrz_wlzrz = f32x4_mul(lyrz_lxrz_lwrz_lzrz, CONTROL_YXWZ);
-            let result1 = f32x4_add(lzry_lwry_nlxry_nlyry, nlyrz_lxrz_lwrz_wlzrz);
-
-            Self(f32x4_add(result0, result1))
-        {% elif is_coresimd %}
-            let lhs = self.0;
-            let rhs = rhs.0;
-
-            const CONTROL_WZYX: f32x4 = f32x4::from_array([1.0, -1.0, 1.0, -1.0]);
-            const CONTROL_ZWXY: f32x4 = f32x4::from_array([1.0, 1.0, -1.0, -1.0]);
-            const CONTROL_YXWZ: f32x4 = f32x4::from_array([-1.0, 1.0, 1.0, -1.0]);
-
-            let r_xxxx = simd_swizzle!(lhs, [0, 0, 0, 0]);
-            let r_yyyy = simd_swizzle!(lhs, [1, 1, 1, 1]);
-            let r_zzzz = simd_swizzle!(lhs, [2, 2, 2, 2]);
-            let r_wwww = simd_swizzle!(lhs, [3, 3, 3, 3]);
-
-            let lxrw_lyrw_lzrw_lwrw = r_wwww * rhs;
-            let l_wzyx = simd_swizzle!(rhs, [3, 2, 1, 0]);
-
-            let lwrx_lzrx_lyrx_lxrx = r_xxxx * l_wzyx;
-            let l_zwxy = simd_swizzle!(l_wzyx, [1, 0, 3, 2]);
-
-            let lwrx_nlzrx_lyrx_nlxrx = lwrx_lzrx_lyrx_lxrx * CONTROL_WZYX;
-
-            let lzry_lwry_lxry_lyry = r_yyyy * l_zwxy;
-            let l_yxwz = simd_swizzle!(l_zwxy, [3, 2, 1, 0]);
-
-            let lzry_lwry_nlxry_nlyry = lzry_lwry_lxry_lyry * CONTROL_ZWXY;
-
-            let lyrz_lxrz_lwrz_lzrz = r_zzzz * l_yxwz;
-            let result0 = lxrw_lyrw_lzrw_lwrw + lwrx_nlzrx_lyrx_nlxrx;
-
-            let nlyrz_lxrz_lwrz_wlzrz = lyrz_lxrz_lwrz_lzrz * CONTROL_YXWZ;
-            let result1 = lzry_lwry_nlxry_nlyry + nlyrz_lxrz_lwrz_wlzrz;
-            Self(result0 + result1)
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             unsafe {
                 let lhs = self.0;
                 let rhs = rhs.0;
@@ -1239,7 +1155,7 @@ impl {{ self_t }} {
     pub fn mul_vec3a(self, rhs: Vec3A) -> Vec3A {
         {% if is_scalar %}
             self.mul_vec3(rhs.into()).into()
-        {% elif is_sse2 %}
+        {% elif is_x86_64 %}
             unsafe {
                 const TWO: __m128 = m128_from_f32x4([2.0; 4]);
                 let w = _mm_shuffle_ps(self.0, self.0, 0b11_11_11_11);
@@ -1247,43 +1163,26 @@ impl {{ self_t }} {
                 let b2 = dot3_into_m128(b, b);
                 Vec3A(_mm_add_ps(
                     _mm_add_ps(
-                        _mm_mul_ps(rhs.0, _mm_sub_ps(_mm_mul_ps(w, w), b2)),
+                        // FMA: `w * w - b2`, with one rounding. NEON below uses
+                        // `mul_add` for the same product, so the two backends
+                        // keep the same bits.
+                        _mm_mul_ps(rhs.0, _mm_fmsub_ps(w, w, b2)),
                         _mm_mul_ps(b, _mm_mul_ps(dot3_into_m128(rhs.0, b), TWO)),
                     ),
                     _mm_mul_ps(Vec3A(b).cross(rhs).into(), _mm_mul_ps(w, TWO)),
                 ))
             }
-        {% elif is_wasm %}
-            const TWO: v128 = v128_from_f32x4([2.0; 4]);
-            let w = i32x4_shuffle::<3, 3, 7, 7>(self.0, self.0);
-            let b = self.0;
-            let b2 = dot3_into_v128(b, b);
-            Vec3A(f32x4_add(
-                f32x4_add(
-                    f32x4_mul(rhs.0, f32x4_sub(f32x4_mul(w, w), b2)),
-                    f32x4_mul(b, f32x4_mul(dot3_into_v128(rhs.0, b), TWO)),
-                ),
-                f32x4_mul(Vec3A(b).cross(rhs).into(), f32x4_mul(w, TWO)),
-            ))
-        {% elif is_coresimd %}
-            const TWO: f32x4 = f32x4::from_array([2.0; 4]);
-            let w = simd_swizzle!(self.0, [3, 3, 3, 3]);
-            let b = self.0;
-            let b2 = dot3_into_f32x4(b, b);
-            Vec3A(
-                rhs.0
-                    .mul(w.mul(w).sub(b2))
-                    .add(b.mul(dot3_into_f32x4(rhs.0, b).mul(TWO)))
-                    .add(Vec3A(b).cross(rhs).0.mul(w.mul(TWO))),
-            )
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             unsafe {
                 let w = self.w;
                 let b = Vec3A::from(self.0);
                 let b2 = b.length_squared();
                 Vec3A(vaddq_f32(
                     vaddq_f32(
-                        vmulq_n_f32(rhs.0, (w * w) - b2),
+                        // FMA: `w * w - b2`, with one rounding. This value is a
+                        // scalar here, so `mul_add` gives the FMA, as rewrite.md
+                        // requires. It matches `_mm_fmsub_ps` on x86-64 exactly.
+                        vmulq_n_f32(rhs.0, w.mul_add(w, -b2)),
                         vmulq_n_f32(b.0, rhs.dot(b) * 2.0),
                     ),
                     vmulq_n_f32(b.cross(rhs).0, w * 2.0),

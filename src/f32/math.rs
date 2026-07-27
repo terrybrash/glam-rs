@@ -32,371 +32,148 @@ fn acos_approx_f32(v: f32) -> f32 {
     }
 }
 
-#[cfg(any(feature = "libm", all(feature = "nostd-libm", not(feature = "std"))))]
-mod libm_math {
-    #[inline(always)]
-    pub(crate) fn abs(f: f32) -> f32 {
-        libm::fabsf(f)
-    }
+// ---------------------------------------------------------------------------
+// Exact operations
+//
+// IEEE 754 defines the result of each one, so x86-64 and ARM give the same
+// bits. Each lowers to one instruction on both. See rewrite.md.
+// ---------------------------------------------------------------------------
 
-    #[inline(always)]
-    pub(crate) fn acos_approx(f: f32) -> f32 {
-        super::acos_approx_f32(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn atan2(f: f32, other: f32) -> f32 {
-        libm::atan2f(f, other)
-    }
-
-    #[allow(unused)]
-    #[inline(always)]
-    pub(crate) fn cos(f: f32) -> f32 {
-        libm::cosf(f)
-    }
-
-    #[allow(unused)]
-    #[inline(always)]
-    pub(crate) fn sin(f: f32) -> f32 {
-        libm::sinf(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn sin_cos(f: f32) -> (f32, f32) {
-        libm::sincosf(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn tan(f: f32) -> f32 {
-        libm::tanf(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn sqrt(f: f32) -> f32 {
-        libm::sqrtf(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn copysign(f: f32, sign: f32) -> f32 {
-        libm::copysignf(f, sign)
-    }
-
-    #[inline(always)]
-    pub(crate) fn signum(f: f32) -> f32 {
-        if f.is_nan() {
-            f32::NAN
-        } else {
-            copysign(1.0, f)
-        }
-    }
-
-    #[inline(always)]
-    pub(crate) fn round(f: f32) -> f32 {
-        libm::roundf(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn trunc(f: f32) -> f32 {
-        libm::truncf(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn ceil(f: f32) -> f32 {
-        libm::ceilf(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn floor(f: f32) -> f32 {
-        libm::floorf(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn exp(f: f32) -> f32 {
-        libm::expf(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn exp2(f: f32) -> f32 {
-        libm::exp2f(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn ln(f: f32) -> f32 {
-        libm::logf(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn log2(f: f32) -> f32 {
-        libm::log2f(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn powf(f: f32, n: f32) -> f32 {
-        libm::powf(f, n)
-    }
-
-    #[inline(always)]
-    pub(crate) fn mul_add(a: f32, b: f32, c: f32) -> f32 {
-        libm::fmaf(a, b, c)
-    }
-
-    #[inline]
-    pub fn div_euclid(a: f32, b: f32) -> f32 {
-        // Based on https://doc.rust-lang.org/src/std/f32.rs.html#293
-        let q = libm::truncf(a / b);
-        if a % b < 0.0 {
-            return if b > 0.0 { q - 1.0 } else { q + 1.0 };
-        }
-        q
-    }
-
-    #[inline]
-    pub fn rem_euclid(a: f32, b: f32) -> f32 {
-        let r = a % b;
-        if r < 0.0 {
-            r + abs(b)
-        } else {
-            r
-        }
-    }
-}
-
-#[cfg(all(not(feature = "libm"), feature = "std"))]
-mod std_math {
-    #[inline(always)]
-    pub(crate) fn abs(f: f32) -> f32 {
-        f32::abs(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn acos_approx(f: f32) -> f32 {
-        super::acos_approx_f32(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn atan2(f: f32, other: f32) -> f32 {
-        f32::atan2(f, other)
-    }
-
-    #[allow(unused)]
-    #[inline(always)]
-    pub(crate) fn cos(f: f32) -> f32 {
-        f32::cos(f)
-    }
-
-    #[allow(unused)]
-    #[inline(always)]
-    pub(crate) fn sin(f: f32) -> f32 {
-        f32::sin(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn sin_cos(f: f32) -> (f32, f32) {
-        f32::sin_cos(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn tan(f: f32) -> f32 {
-        f32::tan(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn sqrt(f: f32) -> f32 {
-        f32::sqrt(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn copysign(f: f32, sign: f32) -> f32 {
-        f32::copysign(f, sign)
-    }
-
-    #[inline(always)]
-    pub(crate) fn signum(f: f32) -> f32 {
-        f32::signum(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn round(f: f32) -> f32 {
-        f32::round(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn trunc(f: f32) -> f32 {
-        f32::trunc(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn ceil(f: f32) -> f32 {
-        f32::ceil(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn floor(f: f32) -> f32 {
-        f32::floor(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn exp(f: f32) -> f32 {
-        f32::exp(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn exp2(f: f32) -> f32 {
-        f32::exp2(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn ln(f: f32) -> f32 {
-        f32::ln(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn log2(f: f32) -> f32 {
-        f32::log2(f)
-    }
-
-    #[inline(always)]
-    pub(crate) fn powf(f: f32, n: f32) -> f32 {
-        f32::powf(f, n)
-    }
-
-    #[inline(always)]
-    pub(crate) fn mul_add(a: f32, b: f32, c: f32) -> f32 {
-        f32::mul_add(a, b, c)
-    }
-
-    #[inline]
-    pub fn div_euclid(a: f32, b: f32) -> f32 {
-        f32::div_euclid(a, b)
-    }
-
-    #[inline]
-    pub fn rem_euclid(a: f32, b: f32) -> f32 {
-        f32::rem_euclid(a, b)
-    }
-}
-
-// Used to reduce the number of compilation errors, in the event that no other
-// math backend is specified.
-#[cfg(all(
-    not(feature = "libm"),
-    not(feature = "std"),
-    not(feature = "nostd-libm")
-))]
-mod no_backend_math {
-    pub(crate) fn abs(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn acos_approx(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn atan2(_: f32, _: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn cos(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn sin(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn sin_cos(_: f32) -> (f32, f32) {
-        unimplemented!()
-    }
-
-    pub(crate) fn tan(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn sqrt(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn copysign(_: f32, _: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn signum(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn round(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn trunc(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn ceil(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn floor(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn exp(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn exp2(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn ln(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn log2(_: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn powf(_: f32, _: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub(crate) fn mul_add(_: f32, _: f32, _: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub fn div_euclid(_: f32, _: f32) -> f32 {
-        unimplemented!()
-    }
-
-    pub fn rem_euclid(_: f32, _: f32) -> f32 {
-        unimplemented!()
-    }
-}
-
-#[cfg(any(feature = "libm", all(feature = "nostd-libm", not(feature = "std"))))]
-pub(crate) use libm_math::*;
-
-#[cfg(all(not(feature = "libm"), feature = "std"))]
-pub(crate) use std_math::*;
-
-#[cfg(all(
-    not(feature = "libm"),
-    not(feature = "std"),
-    not(feature = "nostd-libm")
-))]
-pub(crate) use no_backend_math::*;
-
-/// Multiply-add for `glam`'s internal `fast-math` kernels.
-///
-/// Unlike [`mul_add`] this is backend independent and never calls into `libm`. The algebraic
-/// intrinsics let the compiler contract into an FMA instruction where the target has one and
-/// emit a plain multiply and add where it does not, so this is never slower than writing
-/// `a * b + c` by hand.
-///
-/// They also permit reassociation, so results are not portable across targets. Every caller
-/// must be behind the `fast-math` feature.
-#[cfg(feature = "fast-math")]
 #[inline(always)]
-pub(crate) fn mul_add_fast(a: f32, b: f32, c: f32) -> f32 {
-    a.algebraic_mul(b).algebraic_add(c)
+pub(crate) fn abs(f: f32) -> f32 {
+    f32::abs(f)
+}
+
+#[inline(always)]
+pub(crate) fn sqrt(f: f32) -> f32 {
+    f32::sqrt(f)
+}
+
+#[inline(always)]
+pub(crate) fn copysign(f: f32, sign: f32) -> f32 {
+    f32::copysign(f, sign)
+}
+
+#[inline(always)]
+pub(crate) fn signum(f: f32) -> f32 {
+    f32::signum(f)
+}
+
+#[inline(always)]
+pub(crate) fn trunc(f: f32) -> f32 {
+    f32::trunc(f)
+}
+
+#[inline(always)]
+pub(crate) fn ceil(f: f32) -> f32 {
+    f32::ceil(f)
+}
+
+#[inline(always)]
+pub(crate) fn floor(f: f32) -> f32 {
+    f32::floor(f)
+}
+
+#[inline(always)]
+pub(crate) fn mul_add(a: f32, b: f32, c: f32) -> f32 {
+    f32::mul_add(a, b, c)
+}
+
+/// Rounds to the nearest integer. A tie goes to the even value.
+///
+/// `f32::round` sends a tie away from zero, and x86-64 has no instruction for
+/// that rule. This rule lowers to `ROUNDPS` on x86-64 and to `FRINTN` on ARM,
+/// so both give the same bits. See rewrite.md.
+#[inline(always)]
+pub(crate) fn round(f: f32) -> f32 {
+    f32::round_ties_even(f)
+}
+
+// ---------------------------------------------------------------------------
+// Transcendental operations
+//
+// The math library of the operating system gives different results on each
+// platform. These use one pinned version of the pure-Rust `libm` crate on
+// every target instead. See rewrite.md.
+// ---------------------------------------------------------------------------
+
+#[inline(always)]
+pub(crate) fn acos_approx(f: f32) -> f32 {
+    acos_approx_f32(f)
+}
+
+#[inline(always)]
+pub(crate) fn atan2(f: f32, other: f32) -> f32 {
+    libm::atan2f(f, other)
+}
+
+#[allow(unused)]
+#[inline(always)]
+pub(crate) fn cos(f: f32) -> f32 {
+    libm::cosf(f)
+}
+
+#[allow(unused)]
+#[inline(always)]
+pub(crate) fn sin(f: f32) -> f32 {
+    libm::sinf(f)
+}
+
+#[inline(always)]
+pub(crate) fn sin_cos(f: f32) -> (f32, f32) {
+    libm::sincosf(f)
+}
+
+#[inline(always)]
+pub(crate) fn tan(f: f32) -> f32 {
+    libm::tanf(f)
+}
+
+#[inline(always)]
+pub(crate) fn exp(f: f32) -> f32 {
+    libm::expf(f)
+}
+
+#[inline(always)]
+pub(crate) fn exp2(f: f32) -> f32 {
+    libm::exp2f(f)
+}
+
+#[inline(always)]
+pub(crate) fn ln(f: f32) -> f32 {
+    libm::logf(f)
+}
+
+#[inline(always)]
+pub(crate) fn log2(f: f32) -> f32 {
+    libm::log2f(f)
+}
+
+#[inline(always)]
+pub(crate) fn powf(f: f32, n: f32) -> f32 {
+    libm::powf(f, n)
+}
+
+// ---------------------------------------------------------------------------
+// Built from the operations above
+// ---------------------------------------------------------------------------
+
+#[inline]
+pub fn div_euclid(a: f32, b: f32) -> f32 {
+    // Based on https://doc.rust-lang.org/src/std/f32.rs.html#293
+    let q = trunc(a / b);
+    if a % b < 0.0 {
+        return if b > 0.0 { q - 1.0 } else { q + 1.0 };
+    }
+    q
+}
+
+#[inline]
+pub fn rem_euclid(a: f32, b: f32) -> f32 {
+    let r = a % b;
+    if r < 0.0 {
+        r + abs(b)
+    } else {
+        r
+    }
 }

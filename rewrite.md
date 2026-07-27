@@ -1,44 +1,132 @@
+# Determinism rules for this library
+
+This library must give the same bits on every machine. This document gives the
+rules that make this true. The rules apply to two targets only: x86-64 and ARM.
+
 **Build configuration**
 
-- Set `-C target-cpu=x86-64-v3` in `.cargo/config.toml` for all platforms. This target contains SSE2 to AVX2, FMA, F16C, BMI1/2, LZCNT, and POPCNT.
-- Do not use `target-cpu=native`. Do not set different CPU features on different platforms.
-- Set one rustc version in `rust-toolchain.toml`. Use the same optimization flags for all builds. The same LLVM makes the same FP operation order on all OSes.
-- Build C/C++ code for simulation math with the same fixed `-march`. Do not use `-ffast-math`. Pure Rust simulation code is best.
+- Set `-C target-cpu=x86-64-v3` for all x86-64 targets. This level contains SSE2
+  to AVX2, FMA, F16C, BMI1, BMI2, LZCNT, and POPCNT.
+- Set `-C target-cpu=generic` for all ARM targets. This is the ARMv8-A baseline.
+  It contains NEON, IEEE-754 floating point, FMLA, and the FRINT instructions.
+- Do not use `target-cpu=native`. Do not set different processor features on
+  different machines. If you raise the ARM baseline, raise it everywhere at the
+  same time.
+- Set one rustc version in `rust-toolchain.toml`. Use the same optimization
+  flags for all builds. The same LLVM makes the same floating-point operation
+  order on all operating systems.
+- Write the code in Rust. If you add C or C++ code, build it with the same fixed
+  `-march` flag. Do not use `-ffast-math`.
 
-**Instructions that are permitted (same result on Intel and AMD)**
+**Instructions that are permitted on x86-64**
 
-- All integer SIMD in SSE2 to AVX2: arithmetic, shifts, shuffles (`PSHUFB`, `PALIGNR`), blends, min/max, `PMADD*`, `PMULHRSW`, SAD, pack/unpack, permutes, gathers.
-- SSE4.2 string instructions, `CRC32`, `POPCNT`.
-- IEEE-754 float operations, scalar and packed, 128 and 256 bits: `ADD/SUB/MUL/DIV/SQRT`, `MIN/MAX` (NaN behavior is fixed by the spec), compares, `ADDSUB/HADD/HSUB` (lane order is fixed by the spec), all `CVT*` conversions.
-- `ROUND*` (SSE4.1), only with an explicit rounding mode in the immediate. Do not use the MXCSR mode.
-- F16C conversions (`VCVTPH2PS`, `VCVTPS2PH`). The rounding is fully specified.
-- FMA (`VFMADD*`, `VFMSUB*`, `VFNMADD*`, `VFNMSUB*`). The result is correctly rounded per IEEE 754.
-- `DPPS`/`DPPD`. The sum order is fixed by the SDM. But explicit mul + shuffle + add is easier to examine.
+- All integer SIMD from SSE2 to AVX2: arithmetic, shifts, shuffles (`PSHUFB`,
+  `PALIGNR`), blends, min and max, `PMADD*`, `PMULHRSW`, SAD, pack, unpack,
+  permutes, and gathers.
+- SSE4.2 string instructions, `CRC32`, and `POPCNT`.
+- IEEE-754 floating-point operations, scalar and packed, 128 bits and 256 bits:
+  `ADD`, `SUB`, `MUL`, `DIV`, `SQRT`, compares, and all `CVT*` conversions. IEEE
+  754 gives the result of each one exactly.
+- `MINPS`, `MAXPS`, `MINPD`, and `MAXPD`. These give `a < b ? a : b`, and this
+  is the rule this library uses on ARM also.
+- `ROUNDPS` and `ROUNDPD` (SSE4.1), with a rounding mode in the immediate. Do
+  not use the MXCSR mode.
+- F16C conversions (`VCVTPH2PS` and `VCVTPS2PH`). The rounding is fully defined.
+- FMA (`VFMADD*`, `VFMSUB*`, `VFNMADD*`, `VFNMSUB*`). IEEE 754 gives the result
+  exactly, thus these agree with the ARM `FMLA` and `FMLS` instructions.
+
+**Instructions that are permitted on ARM**
+
+- All integer NEON operations: arithmetic, shifts, table lookups (`TBL`, `TBX`),
+  extracts (`EXT`), bitwise select (`BSL`), min and max, and pairwise operations
+  with an order that you write out.
+- IEEE-754 floating-point operations, scalar and packed, 128 bits: `FADD`,
+  `FSUB`, `FMUL`, `FDIV`, `FSQRT`, compares, and all `FCVT*` conversions.
+- `FMLA` and `FMLS`. These agree with the x86-64 FMA instructions.
+- `FRINTN` and `FRINTZ`. `FRINTN` agrees with `ROUNDPS` immediate 0.
+  `FRINTZ` agrees with `ROUNDPS` immediate 3.
+- `FRINTM` and `FRINTP`. These agree with `ROUNDPS` immediate 1 and immediate 2.
+- Half-precision conversions (`FCVTL`, `FCVTN`). The rounding is fully defined.
+- Compares (`FCMGT`, `FCMGE`, `FCMEQ`) with `BSL`, to build min and max.
 
 **Instructions and functions that are not permitted**
 
-- `RCPPS/RCPSS/VRCPPS` and `RSQRTPS/RSQRTSS/VRSQRTPS`. These give approximate results that are different for each vendor and microarchitecture. Newton-Raphson steps do not correct this. Use full `DIV` and `SQRT`.
-- All x87 instructions, and SSE3 `FISTTP`. Do not make 32-bit x86 builds.
-- Changes to MXCSR: no FTZ/DAZ, no rounding-mode changes. Examine dependencies, specially audio/DSP crates (`_MM_SET_FLUSH_ZERO_MODE`). Default subnormal behavior is the same on all vendors.
-- Runtime feature dispatch in simulation code: `is_x86_feature_detected!`, `multiversion`, simdeez runtime-dispatch paths. Use compile-time features only. Use one code path.
-- Fast-math: `fadd_fast`, `fmul_fast`, algebraic intrinsics, and C flags that set them.
-- std transcendental functions: `sin`, `cos`, `tan`, `exp`, `ln`, `powf`, `atan2`. These use the OS libm, and results are different on each platform. Use one fixed version of the pure-Rust `libm` crate, or your own fixed functions.
-- These std functions are safe: `sqrt`, `abs`, `copysign`, `floor`, `ceil`, `round`, `trunc`, `mul_add`, `%` (fmod).
+On x86-64:
 
-**Procedures**
+- `RCPPS`, `RCPSS`, `VRCPPS`, `RSQRTPS`, `RSQRTSS`, and `VRSQRTPS`. These give
+  results that are not exact, and the results are different on different
+  processors. Newton-Raphson steps do not correct this. Use `DIV` and `SQRT`.
+- `DPPS` and `DPPD`. ARM has no instruction with the same sum order. Write out
+  the multiply, shuffle, and add steps.
+- All x87 instructions, and SSE3 `FISTTP`. Do not build for 32-bit x86.
+- Changes to MXCSR: no FTZ, no DAZ, and no changes to the rounding mode.
 
-- Write FMA explicitly with `mul_add`. Do not let the compiler contract `a * b + c`.
-- Do FP reductions in a fixed order with an explicit shuffle/add tree. Do not use generic `reduce_sum` APIs.
-- Keep the simulation on one thread, or use deterministic parallelism: fixed chunk boundaries, sequential math in each chunk, fixed merge order. Do not use work-stealing on FP state. Rayon/orx-parallel defaults are safe for the renderer only.
-- Use deterministic containers and a fixed iteration order. Do not use the default `HashMap`. Keep a seeded RNG in the simulation state. Do not give clock or frame-time data to the simulation.
-- Run the simulation on the CPU only. The GPU does the render only, and can be nondeterministic.
-- Make a hash of the simulation state each frame. Hash the `to_bits()` patterns. Run cross-platform replay tests in CI to find desyncs after a dependency or toolchain change.
+On ARM:
 
-**Do not**
+- `FRECPE`, `FRECPS`, `FRSQRTE`, and `FRSQRTS`, and the `vrecpe*` and `vrsqrte*`
+  functions. These give results that are not exact. Use `FDIV` and `FSQRT`.
+- `FADDV` and the `vaddvq_*` functions. The sum order is not the same as the
+  x86-64 order. Write out the add tree.
+- `FMIN`, `FMAX`, `FMINNM`, `FMAXNM`, and the `vminq_*`, `vmaxq_*`, `vminnmq_*`,
+  and `vmaxnmq_*` functions. These handle NaN and negative zero differently from
+  `MINPS` and `MAXPS`. Use compares with `BSL`.
+- `FRINTA`. x86-64 has no round instruction that agrees with it. Use `FRINTN`.
+- Changes to FPCR: no FZ, no AH, and no changes to the rounding mode.
 
-- Do not serialize floats as text in the simulation or network path. Use binary bit patterns only.
-- Do not branch on the OS or platform in simulation code.
-- Do not add physics or math middleware before you examine it for rsqrt approximations, fast-math builds, runtime dispatch, and MXCSR changes.
-- Do not use NaN payloads in gameplay logic. This is deterministic on x86 only, and stops if you add ARM.
+On all targets:
 
-**Summary:** All machines run the same code path with the same IEEE-specified instructions. Thus determinism is: pin the toolchain, remove the four approximation instructions, control libm and threads. The replay-hash test in CI keeps this true.
+- Processor feature tests while the program runs: `is_x86_feature_detected!`,
+  `is_aarch64_feature_detected!`, the `multiversion` crate, and the runtime
+  paths in `simdeez`. Use compile-time features. Use one code path.
+- Fast math: `fadd_fast`, `fmul_fast`, the algebraic functions (`algebraic_add`,
+  `algebraic_mul`), and the C flags that turn them on.
+- These std functions: `sin`, `cos`, `tan`, `exp`, `ln`, `log2`, `powf`, and
+  `atan2`. They call the libm of the operating system, and each platform gives
+  different results. Use one fixed version of the pure-Rust `libm` crate, or a
+  fixed function of your own.
+- A fixed function of your own is permitted where speed matters, if every step
+  is a multiply, an add, a compare or a select. `sin_vec4` in the quaternion
+  code is one: it computes four sines at once for `slerp`, and all three
+  backends give the same bits. Such a function gives a result that is not
+  exact, but it gives the *same* result everywhere, which is the rule.
+- These std functions are permitted: `sqrt`, `abs`, `copysign`, `floor`, `ceil`,
+  `trunc`, `mul_add`, and `%`.
+
+**Rules for the code**
+
+- Write FMA with `mul_add`. Do not let the compiler join `a * b + c` into one
+  instruction.
+- Put the FMA operations at the same positions on x86-64 and on ARM.
+- Do floating-point sums in an order that you write out. Use a fixed shuffle and
+  add tree. Do not use `reduce_sum` or a function that does the same.
+- Use the same add tree on x86-64 and on ARM.
+- Make min and max give `a < b ? a : b` on all targets.
+- Round to nearest, with ties to even. `FRINTN` and `ROUNDPS` immediate 0 do
+  this, thus no target needs extra code. Do not use `f32::round`, because it
+  moves ties away from zero and no x86-64 instruction does this.
+- Do not branch on the operating system. Branch on the processor type only to
+  select the SSE2 backend or the NEON backend. The two backends must give the
+  same bits.
+- Examine each new dependency before you add it. Look for reciprocal
+  instructions that are not exact, fast-math builds, processor feature tests,
+  and changes to MXCSR or FPCR.
+- Do not write floating-point values as text. Use the bit patterns.
+- Do not put data in the payload of a NaN.
+
+**Tests**
+
+- Keep the scalar backend. Use it as the reference for tests. Do not ship it.
+- Write a test that sends the same data through the scalar backend, the SSE2
+  backend, and the NEON backend. The test compares the bits.
+- Store known bit patterns in tests. These tests fail if a new toolchain changes
+  a result.
+- Run all tests on x86-64 and on ARM in CI.
+- Add a check that fails if the code contains an instruction from the list of
+  instructions that are not permitted.
+
+**Summary**
+
+All machines run the same code path with the same IEEE-defined instructions.
+Thus determinism has four parts: pin the toolchain, remove the instructions that
+are not exact, control libm, and keep the operation order the same on both
+processor types. The tests in CI keep this true.

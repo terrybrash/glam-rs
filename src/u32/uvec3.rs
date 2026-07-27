@@ -23,12 +23,6 @@ use crate::I64Vec3;
 #[cfg(feature = "u64")]
 use crate::U64Vec3;
 
-#[cfg(feature = "isize")]
-use crate::ISizeVec3;
-
-#[cfg(feature = "usize")]
-use crate::USizeVec3;
-
 use core::fmt;
 use core::iter::{Product, Sum};
 use core::{f32, ops::*};
@@ -51,7 +45,6 @@ pub const fn uvec3(x: u32, y: u32, z: u32) -> UVec3 {
     derive(FromBytes, Immutable, IntoBytes, KnownLayout)
 )]
 #[repr(C)]
-#[cfg_attr(target_arch = "spirv", rust_gpu::vector::v1)]
 pub struct UVec3 {
     pub x: u32,
     pub y: u32,
@@ -542,22 +535,6 @@ impl UVec3 {
     #[must_use]
     pub fn as_u64vec3(self) -> crate::U64Vec3 {
         crate::U64Vec3::new(self.x as u64, self.y as u64, self.z as u64)
-    }
-
-    /// Casts all elements of `self` to `isize`.
-    #[cfg(feature = "isize")]
-    #[inline]
-    #[must_use]
-    pub fn as_isizevec3(self) -> crate::ISizeVec3 {
-        crate::ISizeVec3::new(self.x as isize, self.y as isize, self.z as isize)
-    }
-
-    /// Casts all elements of `self` to `usize`.
-    #[cfg(feature = "usize")]
-    #[inline]
-    #[must_use]
-    pub fn as_usizevec3(self) -> crate::USizeVec3 {
-        crate::USizeVec3::new(self.x as usize, self.y as usize, self.z as usize)
     }
 
     /// Returns a vector containing the wrapping addition of `self` and `rhs`.
@@ -2991,34 +2968,6 @@ impl TryFrom<U64Vec3> for UVec3 {
 
     #[inline]
     fn try_from(v: U64Vec3) -> Result<Self, Self::Error> {
-        Ok(Self::new(
-            u32::try_from(v.x)?,
-            u32::try_from(v.y)?,
-            u32::try_from(v.z)?,
-        ))
-    }
-}
-
-#[cfg(feature = "isize")]
-impl TryFrom<ISizeVec3> for UVec3 {
-    type Error = core::num::TryFromIntError;
-
-    #[inline]
-    fn try_from(v: ISizeVec3) -> Result<Self, Self::Error> {
-        Ok(Self::new(
-            u32::try_from(v.x)?,
-            u32::try_from(v.y)?,
-            u32::try_from(v.z)?,
-        ))
-    }
-}
-
-#[cfg(feature = "usize")]
-impl TryFrom<USizeVec3> for UVec3 {
-    type Error = core::num::TryFromIntError;
-
-    #[inline]
-    fn try_from(v: USizeVec3) -> Result<Self, Self::Error> {
         Ok(Self::new(
             u32::try_from(v.x)?,
             u32::try_from(v.y)?,

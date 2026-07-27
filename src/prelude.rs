@@ -28,12 +28,6 @@ pub use crate::i64::*;
 #[cfg(feature = "u64")]
 pub use crate::u64::*;
 
-#[cfg(feature = "usize")]
-pub use crate::usize::*;
-
-#[cfg(feature = "isize")]
-pub use crate::isize::*;
-
 pub use crate::swizzles::{Vec2Swizzles, Vec3Swizzles, Vec4Swizzles};
 
 pub use crate::EulerRot;

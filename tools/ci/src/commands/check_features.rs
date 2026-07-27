@@ -46,14 +46,6 @@ impl Prepare for CheckFeatures {
             command: cmd,
             failure_message: "FMA check failed",
         });
-
-        let cmd = cmd!(sh, "cargo check -p glam-no_std");
-        cmds.push(PreparedCommand {
-            name: "check glam-no_std".into(),
-            command: cmd,
-            failure_message: "no_std check failed",
-        });
-
         cmds
     }
 }

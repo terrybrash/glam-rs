@@ -60,11 +60,7 @@ mod test {
     test_into_bytes_t!(affine3_into, Affine3);
     test_from_bytes_t!(affine3a_from, Affine3A);
     #[cfg(all(
-        any(
-            target_arch = "aarch64",
-            target_feature = "sse2",
-            target_feature = "simd128"
-        ),
+        any(target_arch = "aarch64", target_feature = "sse2"),
         not(feature = "scalar-math")
     ))]
     test_into_bytes_t!(affine3a_into, Affine3A);
@@ -74,12 +70,7 @@ mod test {
     test_into_bytes_t!(mat3_into, Mat3);
     test_from_bytes_t!(mat3a_from, Mat3A);
     #[cfg(all(
-        any(
-            feature = "core-simd",
-            target_arch = "aarch64",
-            target_feature = "sse2",
-            target_feature = "simd128"
-        ),
+        any(target_arch = "aarch64", target_feature = "sse2"),
         not(feature = "scalar-math")
     ))]
     test_into_bytes_t!(mat3a_into, Mat3A);
@@ -93,12 +84,7 @@ mod test {
     test_into_bytes_t!(vec3_into, Vec3);
     test_from_bytes_t!(vec3a_from, Vec3A);
     #[cfg(all(
-        any(
-            feature = "core-simd",
-            target_arch = "aarch64",
-            target_feature = "sse2",
-            target_feature = "simd128"
-        ),
+        any(target_arch = "aarch64", target_feature = "sse2"),
         not(feature = "scalar-math")
     ))]
     test_into_bytes_t!(vec3a_into, Vec3A);

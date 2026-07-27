@@ -20,7 +20,6 @@ pub use dvec2::{dvec2, DVec2};
 pub use dvec3::{dvec3, DVec3};
 pub use dvec4::{dvec4, DVec4};
 
-#[cfg(not(target_arch = "spirv"))]
 mod test {
     pub use super::*;
     mod const_test_daffine2 {
@@ -56,46 +55,34 @@ mod test {
     }
 
     mod const_test_dquat {
-        #[cfg(not(target_arch = "spirv"))]
         const_assert_eq!(
             core::mem::align_of::<f64>(),
             core::mem::align_of::<super::DQuat>()
         );
-        #[cfg(target_arch = "spirv")]
-        const_assert_eq!(32, core::mem::align_of::<super::DQuat>());
         const_assert_eq!(32, core::mem::size_of::<super::DQuat>());
     }
 
     mod const_test_dvec2 {
-        #[cfg(not(any(feature = "cuda", target_arch = "spirv")))]
         const_assert_eq!(
             core::mem::align_of::<f64>(),
             core::mem::align_of::<super::DVec2>()
         );
-        #[cfg(any(feature = "cuda", target_arch = "spirv"))]
-        const_assert_eq!(16, core::mem::align_of::<super::DVec2>());
         const_assert_eq!(16, core::mem::size_of::<super::DVec2>());
     }
 
     mod const_test_dvec3 {
-        #[cfg(not(target_arch = "spirv"))]
         const_assert_eq!(
             core::mem::align_of::<f64>(),
             core::mem::align_of::<super::DVec3>()
         );
-        #[cfg(target_arch = "spirv")]
-        const_assert_eq!(16, core::mem::align_of::<super::DVec3>());
         const_assert_eq!(24, core::mem::size_of::<super::DVec3>());
     }
 
     mod const_test_dvec4 {
-        #[cfg(not(any(feature = "cuda", target_arch = "spirv")))]
         const_assert_eq!(
             core::mem::align_of::<f64>(),
             core::mem::align_of::<super::DVec4>()
         );
-        #[cfg(any(feature = "cuda", target_arch = "spirv"))]
-        const_assert_eq!(16, core::mem::align_of::<super::DVec4>());
         const_assert_eq!(32, core::mem::size_of::<super::DVec4>());
     }
 }

@@ -1,6 +1,15 @@
 [bans]
 multiple-versions = "deny"
-deny = []
+# Dependencies that would break determinism. rewrite.md requires one code path,
+# no processor feature tests at run time, and no fast-math builds. Examine any
+# new maths or physics dependency before you add it: look for approximate
+# reciprocal instructions, fast-math flags, and changes to MXCSR or FPCR.
+deny = [
+    # Chooses an instruction set while the program runs.
+    { name = "multiversion" },
+    # Has runtime-dispatch paths and approximate reciprocals.
+    { name = "simdeez" },
+]
 skip-tree = [
     # ignore criterion dev-dependency that often have duplicate dependencies internally
     { name = "criterion" },

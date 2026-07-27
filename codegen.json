@@ -7,12 +7,10 @@
       "properties": {
         "dim": null,
         "is_align": false,
-        "is_coresimd": false,
-        "is_neon": false,
         "is_scalar": false,
-        "is_sse2": false,
-        "is_wasm": false,
-        "scalar_t": null
+        "scalar_t": null,
+        "is_x86_64": false,
+        "is_aarch64": false
       },
       "outputs": {
         "src/f32/affine2.rs": {
@@ -74,62 +72,16 @@
       "properties": {
         "dim": null,
         "is_align": false,
-        "is_coresimd": false,
-        "is_neon": false,
         "is_scalar": false,
-        "is_sse2": false,
-        "is_wasm": false,
-        "scalar_t": null
+        "scalar_t": null,
+        "is_x86_64": false,
+        "is_aarch64": false
       },
       "outputs": {
-        "src/f32/coresimd/mat2.rs": {
-          "properties": {
-            "dim": 2,
-            "is_coresimd": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/coresimd/mat3a.rs": {
-          "properties": {
-            "dim": 3,
-            "is_align": true,
-            "is_coresimd": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/coresimd/mat4.rs": {
-          "properties": {
-            "dim": 4,
-            "is_coresimd": true,
-            "scalar_t": "f32"
-          }
-        },
         "src/f32/mat3.rs": {
           "properties": {
             "dim": 3,
             "is_scalar": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/neon/mat2.rs": {
-          "properties": {
-            "dim": 2,
-            "is_neon": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/neon/mat3a.rs": {
-          "properties": {
-            "dim": 3,
-            "is_align": true,
-            "is_neon": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/neon/mat4.rs": {
-          "properties": {
-            "dim": 4,
-            "is_neon": true,
             "scalar_t": "f32"
           }
         },
@@ -155,50 +107,6 @@
             "scalar_t": "f32"
           }
         },
-        "src/f32/sse2/mat2.rs": {
-          "properties": {
-            "dim": 2,
-            "is_sse2": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/sse2/mat3a.rs": {
-          "properties": {
-            "dim": 3,
-            "is_align": true,
-            "is_sse2": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/sse2/mat4.rs": {
-          "properties": {
-            "dim": 4,
-            "is_sse2": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/wasm/mat2.rs": {
-          "properties": {
-            "dim": 2,
-            "is_wasm": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/wasm/mat3a.rs": {
-          "properties": {
-            "dim": 3,
-            "is_align": true,
-            "is_wasm": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/wasm/mat4.rs": {
-          "properties": {
-            "dim": 4,
-            "is_wasm": true,
-            "scalar_t": "f32"
-          }
-        },
         "src/f64/dmat2.rs": {
           "properties": {
             "dim": 2,
@@ -219,46 +127,64 @@
             "is_scalar": true,
             "scalar_t": "f64"
           }
+        },
+        "src/f32/aarch64/mat2.rs": {
+          "properties": {
+            "dim": 2,
+            "scalar_t": "f32",
+            "is_aarch64": true
+          }
+        },
+        "src/f32/aarch64/mat3a.rs": {
+          "properties": {
+            "dim": 3,
+            "is_align": true,
+            "scalar_t": "f32",
+            "is_aarch64": true
+          }
+        },
+        "src/f32/aarch64/mat4.rs": {
+          "properties": {
+            "dim": 4,
+            "scalar_t": "f32",
+            "is_aarch64": true
+          }
+        },
+        "src/f32/x86_64/mat2.rs": {
+          "properties": {
+            "dim": 2,
+            "scalar_t": "f32",
+            "is_x86_64": true
+          }
+        },
+        "src/f32/x86_64/mat3a.rs": {
+          "properties": {
+            "dim": 3,
+            "is_align": true,
+            "scalar_t": "f32",
+            "is_x86_64": true
+          }
+        },
+        "src/f32/x86_64/mat4.rs": {
+          "properties": {
+            "dim": 4,
+            "scalar_t": "f32",
+            "is_x86_64": true
+          }
         }
       }
     },
     "quat.rs.tera": {
       "properties": {
-        "is_coresimd": false,
-        "is_neon": false,
         "is_scalar": false,
-        "is_sse2": false,
-        "is_wasm": false,
-        "scalar_t": null
+        "scalar_t": null,
+        "is_x86_64": false,
+        "is_aarch64": false
       },
       "outputs": {
-        "src/f32/coresimd/quat.rs": {
-          "properties": {
-            "is_coresimd": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/neon/quat.rs": {
-          "properties": {
-            "is_neon": true,
-            "scalar_t": "f32"
-          }
-        },
         "src/f32/scalar/quat.rs": {
           "properties": {
             "is_scalar": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/sse2/quat.rs": {
-          "properties": {
-            "is_sse2": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/wasm/quat.rs": {
-          "properties": {
-            "is_wasm": true,
             "scalar_t": "f32"
           }
         },
@@ -267,43 +193,33 @@
             "is_scalar": true,
             "scalar_t": "f64"
           }
+        },
+        "src/f32/aarch64/quat.rs": {
+          "properties": {
+            "scalar_t": "f32",
+            "is_aarch64": true
+          }
+        },
+        "src/f32/x86_64/quat.rs": {
+          "properties": {
+            "scalar_t": "f32",
+            "is_x86_64": true
+          }
         }
       }
     },
     "swizzle_impl.rs.tera": {
       "properties": {
         "dim": null,
-        "is_coresimd": false,
-        "is_neon": false,
         "is_scalar": false,
-        "is_sse2": false,
-        "is_wasm": false,
         "self_t": null,
         "vec2_t": null,
         "vec3_t": null,
-        "vec4_t": null
+        "vec4_t": null,
+        "is_x86_64": false,
+        "is_aarch64": false
       },
       "outputs": {
-        "src/swizzles/coresimd/vec3a_impl.rs": {
-          "properties": {
-            "dim": 3,
-            "is_coresimd": true,
-            "self_t": "Vec3A",
-            "vec2_t": "Vec2",
-            "vec3_t": "Vec3A",
-            "vec4_t": "Vec4"
-          }
-        },
-        "src/swizzles/coresimd/vec4_impl.rs": {
-          "properties": {
-            "dim": 4,
-            "is_coresimd": true,
-            "self_t": "Vec4",
-            "vec2_t": "Vec2",
-            "vec3_t": "Vec3",
-            "vec4_t": "Vec4"
-          }
-        },
         "src/swizzles/dvec2_impl.rs": {
           "properties": {
             "dim": 2,
@@ -424,36 +340,6 @@
             "vec4_t": "I8Vec4"
           }
         },
-        "src/swizzles/isizevec2_impl.rs": {
-          "properties": {
-            "dim": 2,
-            "is_scalar": true,
-            "self_t": "ISizeVec2",
-            "vec2_t": "ISizeVec2",
-            "vec3_t": "ISizeVec3",
-            "vec4_t": "ISizeVec4"
-          }
-        },
-        "src/swizzles/isizevec3_impl.rs": {
-          "properties": {
-            "dim": 3,
-            "is_scalar": true,
-            "self_t": "ISizeVec3",
-            "vec2_t": "ISizeVec2",
-            "vec3_t": "ISizeVec3",
-            "vec4_t": "ISizeVec4"
-          }
-        },
-        "src/swizzles/isizevec4_impl.rs": {
-          "properties": {
-            "dim": 4,
-            "is_scalar": true,
-            "self_t": "ISizeVec4",
-            "vec2_t": "ISizeVec2",
-            "vec3_t": "ISizeVec3",
-            "vec4_t": "ISizeVec4"
-          }
-        },
         "src/swizzles/ivec2_impl.rs": {
           "properties": {
             "dim": 2,
@@ -484,26 +370,6 @@
             "vec4_t": "IVec4"
           }
         },
-        "src/swizzles/neon/vec3a_impl.rs": {
-          "properties": {
-            "dim": 3,
-            "is_scalar": true,
-            "self_t": "Vec3A",
-            "vec2_t": "Vec2",
-            "vec3_t": "Vec3A",
-            "vec4_t": "Vec4"
-          }
-        },
-        "src/swizzles/neon/vec4_impl.rs": {
-          "properties": {
-            "dim": 4,
-            "is_scalar": true,
-            "self_t": "Vec4",
-            "vec2_t": "Vec2",
-            "vec3_t": "Vec3",
-            "vec4_t": "Vec4"
-          }
-        },
         "src/swizzles/scalar/vec3a_impl.rs": {
           "properties": {
             "dim": 3,
@@ -518,26 +384,6 @@
           "properties": {
             "dim": 4,
             "is_scalar": true,
-            "self_t": "Vec4",
-            "vec2_t": "Vec2",
-            "vec3_t": "Vec3",
-            "vec4_t": "Vec4"
-          }
-        },
-        "src/swizzles/sse2/vec3a_impl.rs": {
-          "properties": {
-            "dim": 3,
-            "is_sse2": true,
-            "self_t": "Vec3A",
-            "vec2_t": "Vec2",
-            "vec3_t": "Vec3A",
-            "vec4_t": "Vec4"
-          }
-        },
-        "src/swizzles/sse2/vec4_impl.rs": {
-          "properties": {
-            "dim": 4,
-            "is_sse2": true,
             "self_t": "Vec4",
             "vec2_t": "Vec2",
             "vec3_t": "Vec3",
@@ -664,36 +510,6 @@
             "vec4_t": "UVec4"
           }
         },
-        "src/swizzles/usizevec2_impl.rs": {
-          "properties": {
-            "dim": 2,
-            "is_scalar": true,
-            "self_t": "USizeVec2",
-            "vec2_t": "USizeVec2",
-            "vec3_t": "USizeVec3",
-            "vec4_t": "USizeVec4"
-          }
-        },
-        "src/swizzles/usizevec3_impl.rs": {
-          "properties": {
-            "dim": 3,
-            "is_scalar": true,
-            "self_t": "USizeVec3",
-            "vec2_t": "USizeVec2",
-            "vec3_t": "USizeVec3",
-            "vec4_t": "USizeVec4"
-          }
-        },
-        "src/swizzles/usizevec4_impl.rs": {
-          "properties": {
-            "dim": 4,
-            "is_scalar": true,
-            "self_t": "USizeVec4",
-            "vec2_t": "USizeVec2",
-            "vec3_t": "USizeVec3",
-            "vec4_t": "USizeVec4"
-          }
-        },
         "src/swizzles/vec2_impl.rs": {
           "properties": {
             "dim": 2,
@@ -714,24 +530,44 @@
             "vec4_t": "Vec4"
           }
         },
-        "src/swizzles/wasm/vec3a_impl.rs": {
+        "src/swizzles/aarch64/vec3a_impl.rs": {
           "properties": {
             "dim": 3,
-            "is_wasm": true,
+            "is_scalar": true,
             "self_t": "Vec3A",
             "vec2_t": "Vec2",
             "vec3_t": "Vec3A",
             "vec4_t": "Vec4"
           }
         },
-        "src/swizzles/wasm/vec4_impl.rs": {
+        "src/swizzles/aarch64/vec4_impl.rs": {
           "properties": {
             "dim": 4,
-            "is_wasm": true,
+            "is_scalar": true,
             "self_t": "Vec4",
             "vec2_t": "Vec2",
             "vec3_t": "Vec3",
             "vec4_t": "Vec4"
+          }
+        },
+        "src/swizzles/x86_64/vec3a_impl.rs": {
+          "properties": {
+            "dim": 3,
+            "self_t": "Vec3A",
+            "vec2_t": "Vec2",
+            "vec3_t": "Vec3A",
+            "vec4_t": "Vec4",
+            "is_x86_64": true
+          }
+        },
+        "src/swizzles/x86_64/vec4_impl.rs": {
+          "properties": {
+            "dim": 4,
+            "self_t": "Vec4",
+            "vec2_t": "Vec2",
+            "vec3_t": "Vec3",
+            "vec4_t": "Vec4",
+            "is_x86_64": true
           }
         }
       }
@@ -748,46 +584,12 @@
       "properties": {
         "dim": null,
         "is_align": false,
-        "is_coresimd": false,
-        "is_neon": false,
         "is_scalar": false,
-        "is_sse2": false,
-        "is_wasm": false,
-        "scalar_t": null
+        "scalar_t": null,
+        "is_x86_64": false,
+        "is_aarch64": false
       },
       "outputs": {
-        "src/f32/coresimd/vec3a.rs": {
-          "properties": {
-            "dim": 3,
-            "is_align": true,
-            "is_coresimd": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/coresimd/vec4.rs": {
-          "properties": {
-            "dim": 4,
-            "is_align": true,
-            "is_coresimd": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/neon/vec3a.rs": {
-          "properties": {
-            "dim": 3,
-            "is_align": true,
-            "is_neon": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/neon/vec4.rs": {
-          "properties": {
-            "dim": 4,
-            "is_align": true,
-            "is_neon": true,
-            "scalar_t": "f32"
-          }
-        },
         "src/f32/scalar/vec3a.rs": {
           "properties": {
             "dim": 3,
@@ -804,22 +606,6 @@
             "scalar_t": "f32"
           }
         },
-        "src/f32/sse2/vec3a.rs": {
-          "properties": {
-            "dim": 3,
-            "is_align": true,
-            "is_sse2": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/sse2/vec4.rs": {
-          "properties": {
-            "dim": 4,
-            "is_align": true,
-            "is_sse2": true,
-            "scalar_t": "f32"
-          }
-        },
         "src/f32/vec2.rs": {
           "properties": {
             "dim": 2,
@@ -831,22 +617,6 @@
           "properties": {
             "dim": 3,
             "is_scalar": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/wasm/vec3a.rs": {
-          "properties": {
-            "dim": 3,
-            "is_align": true,
-            "is_wasm": true,
-            "scalar_t": "f32"
-          }
-        },
-        "src/f32/wasm/vec4.rs": {
-          "properties": {
-            "dim": 4,
-            "is_align": true,
-            "is_wasm": true,
             "scalar_t": "f32"
           }
         },
@@ -955,27 +725,6 @@
             "scalar_t": "i8"
           }
         },
-        "src/isize/isizevec2.rs": {
-          "properties": {
-            "dim": 2,
-            "is_scalar": true,
-            "scalar_t": "isize"
-          }
-        },
-        "src/isize/isizevec3.rs": {
-          "properties": {
-            "dim": 3,
-            "is_scalar": true,
-            "scalar_t": "isize"
-          }
-        },
-        "src/isize/isizevec4.rs": {
-          "properties": {
-            "dim": 4,
-            "is_scalar": true,
-            "scalar_t": "isize"
-          }
-        },
         "src/u16/u16vec2.rs": {
           "properties": {
             "dim": 2,
@@ -1060,25 +809,36 @@
             "scalar_t": "u8"
           }
         },
-        "src/usize/usizevec2.rs": {
-          "properties": {
-            "dim": 2,
-            "is_scalar": true,
-            "scalar_t": "usize"
-          }
-        },
-        "src/usize/usizevec3.rs": {
+        "src/f32/aarch64/vec3a.rs": {
           "properties": {
             "dim": 3,
-            "is_scalar": true,
-            "scalar_t": "usize"
+            "is_align": true,
+            "scalar_t": "f32",
+            "is_aarch64": true
           }
         },
-        "src/usize/usizevec4.rs": {
+        "src/f32/aarch64/vec4.rs": {
           "properties": {
             "dim": 4,
-            "is_scalar": true,
-            "scalar_t": "usize"
+            "is_align": true,
+            "scalar_t": "f32",
+            "is_aarch64": true
+          }
+        },
+        "src/f32/x86_64/vec3a.rs": {
+          "properties": {
+            "dim": 3,
+            "is_align": true,
+            "scalar_t": "f32",
+            "is_x86_64": true
+          }
+        },
+        "src/f32/x86_64/vec4.rs": {
+          "properties": {
+            "dim": 4,
+            "is_align": true,
+            "scalar_t": "f32",
+            "is_x86_64": true
           }
         }
       }
@@ -1086,12 +846,10 @@
     "vec_mask.rs.tera": {
       "properties": {
         "dim": null,
-        "is_coresimd": false,
-        "is_neon": false,
         "is_scalar": false,
-        "is_sse2": false,
-        "is_wasm": false,
-        "scalar_t": null
+        "scalar_t": null,
+        "is_x86_64": false,
+        "is_aarch64": false
       },
       "outputs": {
         "src/bool/bvec2.rs": {
@@ -1115,34 +873,6 @@
             "scalar_t": "bool"
           }
         },
-        "src/bool/coresimd/bvec3a.rs": {
-          "properties": {
-            "dim": 3,
-            "is_coresimd": true,
-            "scalar_t": "u32"
-          }
-        },
-        "src/bool/coresimd/bvec4a.rs": {
-          "properties": {
-            "dim": 4,
-            "is_coresimd": true,
-            "scalar_t": "u32"
-          }
-        },
-        "src/bool/neon/bvec3a.rs": {
-          "properties": {
-            "dim": 3,
-            "is_neon": true,
-            "scalar_t": "u32"
-          }
-        },
-        "src/bool/neon/bvec4a.rs": {
-          "properties": {
-            "dim": 4,
-            "is_neon": true,
-            "scalar_t": "u32"
-          }
-        },
         "src/bool/scalar/bvec3a.rs": {
           "properties": {
             "dim": 3,
@@ -1157,32 +887,32 @@
             "scalar_t": "u32"
           }
         },
-        "src/bool/sse2/bvec3a.rs": {
+        "src/bool/aarch64/bvec3a.rs": {
           "properties": {
             "dim": 3,
-            "is_sse2": true,
-            "scalar_t": "u32"
+            "scalar_t": "u32",
+            "is_aarch64": true
           }
         },
-        "src/bool/sse2/bvec4a.rs": {
+        "src/bool/aarch64/bvec4a.rs": {
           "properties": {
             "dim": 4,
-            "is_sse2": true,
-            "scalar_t": "u32"
+            "scalar_t": "u32",
+            "is_aarch64": true
           }
         },
-        "src/bool/wasm/bvec3a.rs": {
+        "src/bool/x86_64/bvec3a.rs": {
           "properties": {
             "dim": 3,
-            "is_wasm": true,
-            "scalar_t": "u32"
+            "scalar_t": "u32",
+            "is_x86_64": true
           }
         },
-        "src/bool/wasm/bvec4a.rs": {
+        "src/bool/x86_64/bvec4a.rs": {
           "properties": {
             "dim": 4,
-            "is_wasm": true,
-            "scalar_t": "u32"
+            "scalar_t": "u32",
+            "is_x86_64": true
           }
         }
       }
@@ -1271,10 +1001,14 @@
       },
       "outputs": {
         "src/camera/camera_impl.rs": {
-          "properties": { "scalar_t": "f32" }
+          "properties": {
+            "scalar_t": "f32"
+          }
         },
         "src/dcamera/camera_impl.rs": {
-          "properties": { "scalar_t": "f64" }
+          "properties": {
+            "scalar_t": "f64"
+          }
         }
       }
     },
@@ -1285,16 +1019,28 @@
       },
       "outputs": {
         "src/camera/rh/view.rs": {
-          "properties": { "scalar_t": "f32", "is_rh": true }
+          "properties": {
+            "scalar_t": "f32",
+            "is_rh": true
+          }
         },
         "src/camera/lh/view.rs": {
-          "properties": { "scalar_t": "f32", "is_rh": false }
+          "properties": {
+            "scalar_t": "f32",
+            "is_rh": false
+          }
         },
         "src/dcamera/rh/view.rs": {
-          "properties": { "scalar_t": "f64", "is_rh": true }
+          "properties": {
+            "scalar_t": "f64",
+            "is_rh": true
+          }
         },
         "src/dcamera/lh/view.rs": {
-          "properties": { "scalar_t": "f64", "is_rh": false }
+          "properties": {
+            "scalar_t": "f64",
+            "is_rh": false
+          }
         }
       }
     },
@@ -1305,16 +1051,28 @@
       },
       "outputs": {
         "src/camera/rh/proj.rs": {
-          "properties": { "scalar_t": "f32", "is_rh": true }
+          "properties": {
+            "scalar_t": "f32",
+            "is_rh": true
+          }
         },
         "src/camera/lh/proj.rs": {
-          "properties": { "scalar_t": "f32", "is_rh": false }
+          "properties": {
+            "scalar_t": "f32",
+            "is_rh": false
+          }
         },
         "src/dcamera/rh/proj.rs": {
-          "properties": { "scalar_t": "f64", "is_rh": true }
+          "properties": {
+            "scalar_t": "f64",
+            "is_rh": true
+          }
         },
         "src/dcamera/lh/proj.rs": {
-          "properties": { "scalar_t": "f64", "is_rh": false }
+          "properties": {
+            "scalar_t": "f64",
+            "is_rh": false
+          }
         }
       }
     }

@@ -10,8 +10,6 @@ use crate::{I16Vec2, I16Vec3, I16Vec4};
 use crate::{I64Vec2, I64Vec3, I64Vec4};
 #[cfg(feature = "i8")]
 use crate::{I8Vec2, I8Vec3, I8Vec4};
-#[cfg(feature = "isize")]
-use crate::{ISizeVec2, ISizeVec3, ISizeVec4};
 #[cfg(feature = "i32")]
 use crate::{IVec2, IVec3, IVec4};
 #[cfg(feature = "u16")]
@@ -20,8 +18,6 @@ use crate::{U16Vec2, U16Vec3, U16Vec4};
 use crate::{U64Vec2, U64Vec3, U64Vec4};
 #[cfg(feature = "u8")]
 use crate::{U8Vec2, U8Vec3, U8Vec4};
-#[cfg(feature = "usize")]
-use crate::{USizeVec2, USizeVec3, USizeVec4};
 #[cfg(feature = "u32")]
 use crate::{UVec2, UVec3, UVec4};
 
@@ -66,11 +62,7 @@ arbitrary_vector_impl!(I64Vec2, I64Vec3, I64Vec4);
 #[cfg(feature = "u64")]
 arbitrary_vector_impl!(U64Vec2, U64Vec3, U64Vec4);
 
-#[cfg(feature = "isize")]
-arbitrary_vector_impl!(ISizeVec2, ISizeVec3, ISizeVec4);
 
-#[cfg(feature = "usize")]
-arbitrary_vector_impl!(USizeVec2, USizeVec3, USizeVec4);
 
 macro_rules! arbitrary_matrix_impl {
     ($($ty:ty),*) => {
@@ -104,8 +96,6 @@ mod test {
     use crate::{I64Vec2, I64Vec3, I64Vec4};
     #[cfg(feature = "i8")]
     use crate::{I8Vec2, I8Vec3, I8Vec4};
-    #[cfg(feature = "isize")]
-    use crate::{ISizeVec2, ISizeVec3, ISizeVec4};
     #[cfg(feature = "i32")]
     use crate::{IVec2, IVec3, IVec4};
     #[cfg(feature = "u16")]
@@ -114,8 +104,6 @@ mod test {
     use crate::{U64Vec2, U64Vec3, U64Vec4};
     #[cfg(feature = "u8")]
     use crate::{U8Vec2, U8Vec3, U8Vec4};
-    #[cfg(feature = "usize")]
-    use crate::{USizeVec2, USizeVec3, USizeVec4};
     #[cfg(feature = "u32")]
     use crate::{UVec2, UVec3, UVec4};
     use arbitrary::Unstructured;
@@ -242,52 +230,6 @@ mod test {
         );
         assert_eq!(
             DVec4::new(1.0, 2.0, 3.0, 4.0),
-            Unstructured::new(&bytes).arbitrary().unwrap()
-        );
-    }
-
-    #[cfg(feature = "usize")]
-    #[test]
-    fn test_arbitrary_usize() {
-        // The integer arbitrary impl converts little endian bytes.
-        let mut bytes = [0u8; 4 * size_of::<usize>()];
-        for (i, chunk) in bytes.chunks_exact_mut(size_of::<usize>()).enumerate() {
-            chunk.copy_from_slice(&(i + 1).to_le_bytes());
-        }
-
-        assert_eq!(
-            USizeVec2::new(1, 2),
-            Unstructured::new(&bytes).arbitrary().unwrap()
-        );
-        assert_eq!(
-            USizeVec3::new(1, 2, 3),
-            Unstructured::new(&bytes).arbitrary().unwrap()
-        );
-        assert_eq!(
-            USizeVec4::new(1, 2, 3, 4),
-            Unstructured::new(&bytes).arbitrary().unwrap()
-        );
-    }
-
-    #[cfg(feature = "isize")]
-    #[test]
-    fn test_arbitrary_isize() {
-        // The integer arbitrary impl converts little endian bytes.
-        let mut bytes = [0u8; 4 * size_of::<isize>()];
-        for (i, chunk) in bytes.chunks_exact_mut(size_of::<isize>()).enumerate() {
-            chunk.copy_from_slice(&(i + 1).to_le_bytes());
-        }
-
-        assert_eq!(
-            ISizeVec2::new(1, 2),
-            Unstructured::new(&bytes).arbitrary().unwrap()
-        );
-        assert_eq!(
-            ISizeVec3::new(1, 2, 3),
-            Unstructured::new(&bytes).arbitrary().unwrap()
-        );
-        assert_eq!(
-            ISizeVec4::new(1, 2, 3, 4),
             Unstructured::new(&bytes).arbitrary().unwrap()
         );
     }

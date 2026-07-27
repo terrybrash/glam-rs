@@ -3,7 +3,7 @@
 use crate::{Affine3, Mat3, Mat3A, Mat4, Quat, Vec3, Vec3A};
 use core::ops::{Deref, DerefMut, Mul, MulAssign};
 
-#[cfg(all(feature = "zerocopy", not(feature = "core-simd")))]
+#[cfg(feature = "zerocopy")]
 use zerocopy_derive::*;
 
 /// A 3D affine transform, which can represent translation, rotation, scaling and shear.
@@ -11,19 +11,12 @@ use zerocopy_derive::*;
 /// This type is 16 byte aligned.
 #[derive(Copy, Clone)]
 #[cfg_attr(feature = "bytemuck", derive(bytemuck::AnyBitPattern))]
-#[cfg_attr(
-    all(feature = "zerocopy", not(feature = "core-simd")),
-    derive(FromBytes, Immutable, KnownLayout)
-)]
+#[cfg_attr(feature = "zerocopy", derive(FromBytes, Immutable, KnownLayout))]
 #[cfg_attr(
     all(
         feature = "zerocopy",
-        any(
-            target_arch = "aarch64",
-            target_feature = "sse2",
-            target_feature = "simd128"
-        ),
-        not(any(feature = "core-simd", feature = "scalar-math"))
+        any(target_arch = "aarch64", target_feature = "sse2"),
+        not(feature = "scalar-math")
     ),
     derive(IntoBytes)
 )]

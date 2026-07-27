@@ -38,13 +38,9 @@
 {% if self_t == "Mat2" %}
     {% if not is_scalar %}
         {% set is_simd = true %}
-        {% if is_sse2 %}
+        {% if is_x86_64 %}
             {% set simd_t = "__m128" %}
-        {% elif is_wasm %}
-            {% set simd_t = "v128" %}
-        {% elif is_coresimd %}
-            {% set simd_t = "f32x4" %}
-        {% elif is_neon %}
+        {% elif is_aarch64 %}
             {% set simd_t = "float32x4_t" %}
         {% endif %}
     {% endif %}
@@ -86,14 +82,10 @@ use crate::{
     Mat{{ dim }},
 {% endif %}
 {% if self_t == "Mat4" %}
-    {% if is_sse2 %}
-        sse2::*,
-    {% elif is_wasm %}
-        wasm::*,
-    {% elif is_coresimd %}
-        coresimd::*,
-    {% elif is_neon %}
-        neon::*,
+    {% if is_x86_64 %}
+        x86_64::*,
+    {% elif is_aarch64 %}
+        aarch64::*,
     {% endif %}
 {% endif %}
     {{ scalar_t }}::math,
@@ -103,33 +95,19 @@ use core::fmt;
 use core::iter::{Product, Sum};
 use core::ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-{% if is_sse2 %}
-#[cfg(target_arch = "x86")]
-use core::arch::x86::*;
-#[cfg(target_arch = "x86_64")]
+{% if is_x86_64 %}
 use core::arch::x86_64::*;
-{% elif is_wasm %}
-#[cfg(target_arch = "wasm32")]
-use core::arch::wasm32::*;
-#[cfg(target_arch = "wasm64")]
-use core::arch::wasm64::*;
-{% elif is_coresimd %}
-use core::simd::*;
-{% elif is_neon %}
+{% elif is_aarch64 %}
 use core::arch::aarch64::*;
 {% endif %}
 
-{% if not is_coresimd %}
+
 #[cfg(feature = "zerocopy")]
 use zerocopy_derive::*;
-{% endif %}
 
-{% set is_sse2_or_neon = is_sse2 or is_neon %}
-{# Comment emitted above each `fast-math` reduction. These kernels reassociate the
-   sum into a balanced tree and fuse the multiplies, which cuts both the
-   instruction count and the dependency chain, but changes the result in the last
-   ulp -- so they are only used when the caller has opted out of determinism. #}
-{% if self_t == "Mat2" and is_sse2_or_neon %}
+
+{% set is_simd_backend = is_x86_64 or is_aarch64 %}
+{% if self_t == "Mat2" and is_simd_backend %}
 #[repr(C)]
 union UnionCast {
     a: [f32; 4],
@@ -198,22 +176,19 @@ pub const fn {{ self_t | lower }}(
 #[derive(Clone, Copy)]
 {%- if self_t == "Mat3A" and is_scalar %}
 #[cfg_attr(feature = "bytemuck", derive(bytemuck::AnyBitPattern))]
-{%- if not is_coresimd %}
+
 #[cfg_attr(feature = "zerocopy", derive(FromBytes, Immutable, KnownLayout))]
-{%- endif %}
+
 {%- else %}
 #[cfg_attr(feature = "bytemuck", derive(bytemuck::Pod, bytemuck::Zeroable))]
-{%- if not is_coresimd %}
+
 #[cfg_attr(feature = "zerocopy", derive(FromBytes, Immutable, IntoBytes, KnownLayout))]
-{%- endif %}
+
 {%- endif %}
 {%- if self_t == "Mat4" and is_scalar %}
-#[cfg_attr(any(not(feature = "scalar-math"), feature = "cuda"), repr(align(16)))]
+#[cfg_attr(not(feature = "scalar-math"), repr(align(16)))]
 {%- elif self_t == "Mat2" and is_scalar %}
 #[cfg_attr(not(feature = "scalar-math"), repr(align(16)))]
-#[cfg_attr(feature = "cuda", repr(align(8)))]
-{%- elif self_t == "DMat2" or self_t == "DMat4" %}
-#[cfg_attr(feature = "cuda", repr(align(16)))]
 {%- endif %}
 {%- if self_t == "Mat2" and not is_scalar %}
 #[repr(transparent)]
@@ -260,13 +235,9 @@ impl {{ self_t }} {
             {%- endfor %}
         {%- endfor %}
     ) -> Self {
-        {% if self_t == "Mat2" and is_sse2 %}
+        {% if self_t == "Mat2" and is_x86_64 %}
             unsafe { UnionCast { a: [m00, m01, m10, m11] }.v }
-        {% elif self_t == "Mat2" and is_wasm %}
-            Self(f32x4(m00, m01, m10, m11))
-        {% elif self_t == "Mat2" and is_coresimd %}
-            Self(f32x4::from_array([m00, m01, m10, m11]))
-        {% elif self_t == "Mat2" and is_neon %}
+        {% elif self_t == "Mat2" and is_aarch64 %}
             unsafe { UnionCast { a: [m00, m01, m10, m11] }.v }
         {% else %}
         Self {
@@ -289,13 +260,9 @@ impl {{ self_t }} {
             {{ axis }}: {{ col_t }},
         {% endfor %}
     ) -> Self {
-        {% if self_t == "Mat2" and is_sse2 %}
+        {% if self_t == "Mat2" and is_x86_64 %}
             unsafe { UnionCast { a: [x_axis.x, x_axis.y, y_axis.x, y_axis.y] }.v }
-        {% elif self_t == "Mat2" and is_wasm %}
-            Self(f32x4(x_axis.x, x_axis.y, y_axis.x, y_axis.y))
-        {% elif self_t == "Mat2" and is_coresimd %}
-            Self(f32x4::from_array([x_axis.x, x_axis.y, y_axis.x, y_axis.y]))
-        {% elif self_t == "Mat2" and is_neon %}
+        {% elif self_t == "Mat2" and is_aarch64 %}
             unsafe { UnionCast { a: [x_axis.x, x_axis.y, y_axis.x, y_axis.y] }.v }
         {% else %}
         Self {
@@ -312,15 +279,13 @@ impl {{ self_t }} {
     #[inline]
     #[must_use]
     pub const fn from_cols_array(m: &[{{ scalar_t }}; {{ size }}]) -> Self {
-        {% if self_t == "Mat2" and is_coresimd %}
-            Self(f32x4::from_array(*m))
-        {% else %}
+        
         Self::new(
             {% for i in range(end = size) %}
                 m[{{ i }}],
             {%- endfor %}
         )
-        {% endif %}
+        
     }
 
     /// Creates a `[{{ scalar_t }}; {{ size }}]` array storing data in column major order.
@@ -1090,13 +1055,9 @@ impl {{ self_t }} {
     #[inline]
     #[must_use]
     pub fn transpose(&self) -> Self {
-        {% if self_t == "Mat2" and is_sse2 %}
+        {% if self_t == "Mat2" and is_x86_64 %}
             Self(unsafe { _mm_shuffle_ps(self.0, self.0, 0b11_01_10_00) })
-        {% elif self_t == "Mat2" and is_wasm %}
-            Self(i32x4_shuffle::<0, 2, 5, 7>(self.0, self.0))
-        {% elif self_t == "Mat2" and is_coresimd %}
-            Self(simd_swizzle!(self.0, [0, 2, 1, 3]))
-        {% elif self_t == "Mat2" and is_neon %}
+        {% elif self_t == "Mat2" and is_aarch64 %}
             Self(unsafe {
                 vsetq_lane_f32(
                     vgetq_lane_f32(self.0, 2),
@@ -1104,7 +1065,7 @@ impl {{ self_t }} {
                     1,
                 )
             })
-        {% elif self_t == "Mat3A" and is_sse2 %}
+        {% elif self_t == "Mat3A" and is_x86_64 %}
             unsafe {
                 let tmp0 = _mm_shuffle_ps(self.x_axis.0, self.y_axis.0, 0b01_00_01_00);
                 let tmp1 = _mm_shuffle_ps(self.x_axis.0, self.y_axis.0, 0b11_10_11_10);
@@ -1115,45 +1076,7 @@ impl {{ self_t }} {
                     z_axis: Vec3A(_mm_shuffle_ps(tmp1, self.z_axis.0, 0b10_10_10_00)),
                 }
             }
-        {% elif self_t == "Mat3A" and is_wasm %}
-            let tmp0 = i32x4_shuffle::<0, 1, 4, 5>(self.x_axis.0, self.y_axis.0);
-            let tmp1 = i32x4_shuffle::<2, 3, 6, 7>(self.x_axis.0, self.y_axis.0);
-
-            Self {
-                x_axis: Vec3A(i32x4_shuffle::<0, 2, 4, 4>(tmp0, self.z_axis.0)),
-                y_axis: Vec3A(i32x4_shuffle::<1, 3, 5, 5>(tmp0, self.z_axis.0)),
-                z_axis: Vec3A(i32x4_shuffle::<0, 2, 6, 6>(tmp1, self.z_axis.0)),
-            }
-        {% elif self_t == "Mat3A" and is_coresimd %}
-            let tmp0 = simd_swizzle!(
-                self.x_axis.0,
-                self.y_axis.0,
-                [0, 1, 4, 5]
-            );
-            let tmp1 = simd_swizzle!(
-                self.x_axis.0,
-                self.y_axis.0,
-                [2, 3, 6, 7]
-            );
-
-            Self {
-                x_axis: Vec3A(simd_swizzle!(
-                    tmp0,
-                    self.z_axis.0,
-                    [0, 2, 4, 4]
-                )),
-                y_axis: Vec3A(simd_swizzle!(
-                    tmp0,
-                    self.z_axis.0,
-                    [1, 3, 5, 5]
-                )),
-                z_axis: Vec3A(simd_swizzle!(
-                    tmp1,
-                    self.z_axis.0,
-                    [0, 2, 6, 6]
-                )),
-            }
-        {% elif self_t == "Mat3A" and is_neon %}
+        {% elif self_t == "Mat3A" and is_aarch64 %}
             let x = self.x_axis.0;
             let y = self.y_axis.0;
             let z = self.z_axis.0;
@@ -1173,7 +1096,7 @@ impl {{ self_t }} {
                     Vec3A::from(vsetq_lane_f32(vgetq_lane_f32(z, 2), vuzp1q_f32(tmp1, z), 2)),
                 )
             }
-        {% elif self_t == "Mat4" and is_sse2 %}
+        {% elif self_t == "Mat4" and is_x86_64 %}
             unsafe {
                 // Based on https://github.com/microsoft/DirectXMath `XMMatrixTranspose`
                 let tmp0 = _mm_shuffle_ps(self.x_axis.0, self.y_axis.0, 0b01_00_01_00);
@@ -1187,48 +1110,6 @@ impl {{ self_t }} {
                     z_axis: Vec4(_mm_shuffle_ps(tmp1, tmp3, 0b10_00_10_00)),
                     w_axis: Vec4(_mm_shuffle_ps(tmp1, tmp3, 0b11_01_11_01)),
                 }
-            }
-        {% elif self_t == "Mat4" and is_wasm %}
-            // Based on https://github.com/microsoft/DirectXMath `XMMatrixTranspose`
-            let tmp0 = i32x4_shuffle::<0, 1, 4, 5>(self.x_axis.0, self.y_axis.0);
-            let tmp1 = i32x4_shuffle::<2, 3, 6, 7>(self.x_axis.0, self.y_axis.0);
-            let tmp2 = i32x4_shuffle::<0, 1, 4, 5>(self.z_axis.0, self.w_axis.0);
-            let tmp3 = i32x4_shuffle::<2, 3, 6, 7>(self.z_axis.0, self.w_axis.0);
-
-            Self {
-                x_axis: Vec4(i32x4_shuffle::<0, 2, 4, 6>(tmp0, tmp2)),
-                y_axis: Vec4(i32x4_shuffle::<1, 3, 5, 7>(tmp0, tmp2)),
-                z_axis: Vec4(i32x4_shuffle::<0, 2, 4, 6>(tmp1, tmp3)),
-                w_axis: Vec4(i32x4_shuffle::<1, 3, 5, 7>(tmp1, tmp3)),
-            }
-        {% elif self_t == "Mat4" and is_coresimd %}
-            // Based on https://github.com/microsoft/DirectXMath `XMMatrixTranspose`
-            let tmp0 = simd_swizzle!(
-                self.x_axis.0,
-                self.y_axis.0,
-                [0, 1, 4, 5]
-            );
-            let tmp1 = simd_swizzle!(
-                self.x_axis.0,
-                self.y_axis.0,
-                [2, 3, 6, 7]
-            );
-            let tmp2 = simd_swizzle!(
-                self.z_axis.0,
-                self.w_axis.0,
-                [0, 1, 4, 5]
-            );
-            let tmp3 = simd_swizzle!(
-                self.z_axis.0,
-                self.w_axis.0,
-                [2, 3, 6, 7]
-            );
-
-            Self {
-                x_axis: Vec4(simd_swizzle!(tmp0, tmp2, [0, 2, 4, 6])),
-                y_axis: Vec4(simd_swizzle!(tmp0, tmp2, [1, 3, 5, 7])),
-                z_axis: Vec4(simd_swizzle!(tmp1, tmp3, [0, 2, 4, 6])),
-                w_axis: Vec4(simd_swizzle!(tmp1, tmp3, [1, 3, 5, 7])),
             }
         {% else %}
             Self {
@@ -1260,7 +1141,7 @@ impl {{ self_t }} {
     {%- endif %}
     #[must_use]
     pub fn determinant(&self) -> {{ scalar_t }} {
-        {% if self_t == "Mat2" and is_sse2 %}
+        {% if self_t == "Mat2" and is_x86_64 %}
             unsafe {
                 let abcd = self.0;
                 let dcba = _mm_shuffle_ps(abcd, abcd, 0b00_01_10_11);
@@ -1268,19 +1149,7 @@ impl {{ self_t }} {
                 let det = _mm_sub_ps(prod, _mm_shuffle_ps(prod, prod, 0b01_01_01_01));
                 _mm_cvtss_f32(det)
             }
-        {% elif self_t == "Mat2" and is_wasm %}
-            let abcd = self.0;
-            let dcba = i32x4_shuffle::<3, 2, 5, 4>(abcd, abcd);
-            let prod = f32x4_mul(abcd, dcba);
-            let det = f32x4_sub(prod, i32x4_shuffle::<1, 1, 5, 5>(prod, prod));
-            f32x4_extract_lane::<0>(det)
-        {% elif self_t == "Mat2" and is_coresimd %}
-            let abcd = self.0;
-            let dcba = simd_swizzle!(abcd, [3, 2, 1, 0]);
-            let prod = abcd * dcba;
-            let det = prod - simd_swizzle!(prod, [1, 1, 1, 1]);
-            det[0]
-        {% elif self_t == "Mat2" and is_neon %}
+        {% elif self_t == "Mat2" and is_aarch64 %}
             unsafe {
                 let abcd = self.0;
                 let badc = vrev64q_f32(abcd);
@@ -1289,179 +1158,31 @@ impl {{ self_t }} {
                 let det = vsubq_f32(prod, vdupq_laneq_f32(prod, 1));
                 vgetq_lane_f32(det, 0)
             }
-        {% elif self_t == "Mat4" and is_sse2 %}
-            unsafe {
-                // Based on https://github.com/g-truc/glm `glm_mat4_determinant_lowp`
-                let swp2a = _mm_shuffle_ps(self.z_axis.0, self.z_axis.0, 0b00_01_01_10);
-                let swp3a = _mm_shuffle_ps(self.w_axis.0, self.w_axis.0, 0b11_10_11_11);
-                let swp2b = _mm_shuffle_ps(self.z_axis.0, self.z_axis.0, 0b11_10_11_11);
-                let swp3b = _mm_shuffle_ps(self.w_axis.0, self.w_axis.0, 0b00_01_01_10);
-                let swp2c = _mm_shuffle_ps(self.z_axis.0, self.z_axis.0, 0b00_00_01_10);
-                let swp3c = _mm_shuffle_ps(self.w_axis.0, self.w_axis.0, 0b01_10_00_00);
-
-                let mula = _mm_mul_ps(swp2a, swp3a);
-                let mulb = _mm_mul_ps(swp2b, swp3b);
-                let mulc = _mm_mul_ps(swp2c, swp3c);
-                let sube = _mm_sub_ps(mula, mulb);
-                let subf = _mm_sub_ps(_mm_movehl_ps(mulc, mulc), mulc);
-
-                let subfaca = _mm_shuffle_ps(sube, sube, 0b10_01_00_00);
-                let swpfaca = _mm_shuffle_ps(self.y_axis.0, self.y_axis.0, 0b00_00_00_01);
-                let mulfaca = _mm_mul_ps(swpfaca, subfaca);
-
-                let subtmpb = _mm_shuffle_ps(sube, subf, 0b00_00_11_01);
-                let subfacb = _mm_shuffle_ps(subtmpb, subtmpb, 0b11_01_01_00);
-                let swpfacb = _mm_shuffle_ps(self.y_axis.0, self.y_axis.0, 0b01_01_10_10);
-                let mulfacb = _mm_mul_ps(swpfacb, subfacb);
-
-                let subres = _mm_sub_ps(mulfaca, mulfacb);
-                let subtmpc = _mm_shuffle_ps(sube, subf, 0b01_00_10_10);
-                let subfacc = _mm_shuffle_ps(subtmpc, subtmpc, 0b11_11_10_00);
-                let swpfacc = _mm_shuffle_ps(self.y_axis.0, self.y_axis.0, 0b10_11_11_11);
-                let mulfacc = _mm_mul_ps(swpfacc, subfacc);
-
-                let addres = _mm_add_ps(subres, mulfacc);
-                let detcof = _mm_mul_ps(addres, _mm_setr_ps(1.0, -1.0, 1.0, -1.0));
-
-                dot4(self.x_axis.0, detcof)
-            }
-        {% elif self_t == "Mat4" and is_wasm %}
-            // Based on https://github.com/g-truc/glm `glm_mat4_determinant`
-            let swp2a = i32x4_shuffle::<2, 1, 1, 0>(self.z_axis.0, self.z_axis.0);
-            let swp3a = i32x4_shuffle::<3, 3, 2, 3>(self.w_axis.0, self.w_axis.0);
-            let swp2b = i32x4_shuffle::<3, 3, 2, 3>(self.z_axis.0, self.z_axis.0);
-            let swp3b = i32x4_shuffle::<2, 1, 1, 0>(self.w_axis.0, self.w_axis.0);
-            let swp2c = i32x4_shuffle::<2, 1, 0, 0>(self.z_axis.0, self.z_axis.0);
-            let swp3c = i32x4_shuffle::<0, 0, 2, 1>(self.w_axis.0, self.w_axis.0);
-
-            let mula = f32x4_mul(swp2a, swp3a);
-            let mulb = f32x4_mul(swp2b, swp3b);
-            let mulc = f32x4_mul(swp2c, swp3c);
-            let sube = f32x4_sub(mula, mulb);
-            let subf = f32x4_sub(i32x4_shuffle::<6, 7, 2, 3>(mulc, mulc), mulc);
-
-            let subfaca = i32x4_shuffle::<0, 0, 1, 2>(sube, sube);
-            let swpfaca = i32x4_shuffle::<1, 0, 0, 0>(self.y_axis.0, self.y_axis.0);
-            let mulfaca = f32x4_mul(swpfaca, subfaca);
-
-            let subtmpb = i32x4_shuffle::<1, 3, 4, 4>(sube, subf);
-            let subfacb = i32x4_shuffle::<0, 1, 1, 3>(subtmpb, subtmpb);
-            let swpfacb = i32x4_shuffle::<2, 2, 1, 1>(self.y_axis.0, self.y_axis.0);
-            let mulfacb = f32x4_mul(swpfacb, subfacb);
-
-            let subres = f32x4_sub(mulfaca, mulfacb);
-            let subtmpc = i32x4_shuffle::<2, 2, 4, 5>(sube, subf);
-            let subfacc = i32x4_shuffle::<0, 2, 3, 3>(subtmpc, subtmpc);
-            let swpfacc = i32x4_shuffle::<3, 3, 3, 2>(self.y_axis.0, self.y_axis.0);
-            let mulfacc = f32x4_mul(swpfacc, subfacc);
-
-            let addres = f32x4_add(subres, mulfacc);
-            let detcof = f32x4_mul(addres, f32x4(1.0, -1.0, 1.0, -1.0));
-
-            dot4(self.x_axis.0, detcof)
-        {% elif self_t == "Mat4" and is_coresimd %}
-            // Based on https://github.com/g-truc/glm `glm_mat4_determinant`
-            let swp2a = simd_swizzle!(self.z_axis.0, [2, 1, 1, 0]);
-            let swp3a = simd_swizzle!(self.w_axis.0, [3, 3, 2, 3]);
-            let swp2b = simd_swizzle!(self.z_axis.0, [3, 3, 2, 3]);
-            let swp3b = simd_swizzle!(self.w_axis.0, [2, 1, 1, 0]);
-            let swp2c = simd_swizzle!(self.z_axis.0, [2, 1, 0, 0]);
-            let swp3c = simd_swizzle!(self.w_axis.0, [0, 0, 2, 1]);
-
-            let mula = swp2a * swp3a;
-            let mulb = swp2b * swp3b;
-            let mulc = swp2c * swp3c;
+        {% elif self_t == "Mat4" %}
+            {# Based on https://github.com/g-truc/glm `glm_mat4_determinant_lowp`.
+               Written with `{{ vec4_t }}` operations rather than per-backend
+               intrinsics, so SSE2 and NEON run the same sequence and give the
+               same bits. Every step is a shuffle, a multiply, an add or a
+               subtract, all of which IEEE 754 defines exactly. #}
+            let mula = self.z_axis.zyyx() * self.w_axis.wwzw();
+            let mulb = self.z_axis.wwzw() * self.w_axis.zyyx();
+            let mulc = self.z_axis.zyxx() * self.w_axis.xxzy();
             let sube = mula - mulb;
-            let subf = simd_swizzle!(mulc, [2, 3, 2, 3]) - mulc;
+            // Only the first two lanes of the original `subf` are ever read.
+            let subf0 = mulc.z - mulc.x;
+            let subf1 = mulc.w - mulc.y;
 
-            let subfaca = simd_swizzle!(sube, [0, 0, 1, 2]);
-            let swpfaca = simd_swizzle!(self.y_axis.0, [1, 0, 0, 0]);
-            let mulfaca = swpfaca * subfaca;
-
-            let subtmpb = simd_swizzle!(sube, subf, [1, 3, 4, 4]);
-            let subfacb = simd_swizzle!(subtmpb, [0, 1, 1, 3]);
-            let swpfacb = simd_swizzle!(self.y_axis.0, [2, 2, 1, 1]);
-            let mulfacb = swpfacb * subfacb;
-
+            let mulfaca = self.y_axis.yxxx() * sube.xxyz();
+            let mulfacb =
+                self.y_axis.zzyy() * {{ vec4_t }}::new(sube.y, sube.w, sube.w, subf0);
             let subres = mulfaca - mulfacb;
-            let subtmpc = simd_swizzle!(sube, subf, [2, 2, 4, 5]);
-            let subfacc = simd_swizzle!(subtmpc, [0, 2, 3, 3]);
-            let swpfacc = simd_swizzle!(self.y_axis.0, [3, 3, 3, 2]);
-            let mulfacc = swpfacc * subfacc;
 
+            let mulfacc =
+                self.y_axis.wwwz() * {{ vec4_t }}::new(sube.z, subf0, subf1, subf1);
             let addres = subres + mulfacc;
-            let detcof = addres * f32x4::from_array([1.0, -1.0, 1.0, -1.0]);
 
-            dot4(self.x_axis.0, detcof)
-        {#
-        // neon implementation is slower than scalar
-        // {% elif self_t == "Mat4" and is_neon %}
-        //     unsafe {
-        //         let swizz2110 = |x| {
-        //             let x = vuzp1q_f32(x, vdupq_laneq_f32(x, 1));
-        //             vextq_f32(x, x, 1)
-        //         };
-        //         let swizz3323 = |x| {
-        //             let xy = vgetq_lane_f32(x, 3);
-        //             vsetq_lane_f32(xy, vsetq_lane_f32(xy, x, 0), 1)
-        //         };
-        //         let swizz2100 = |x| {
-        //             let y = vuzp1q_f32(x, x);
-        //             vuzp1q_f32(vextq_f32(x, y, 3), y)
-        //         };
-        //         let swizz0021 = |x| vtrn1q_f32(x, vzip1q_f32(x, x));
-        //         // let swizz6723 = |x, y| {
-        //         //     vsetq_lane_f64(vgetq_lane_f64(y, 1), 0)
-        //         // };
-        //         let swizz2323 = |x| vreinterpretq_f32_f64(vdupq_laneq_f64(vreinterpretq_f64_f32(x), 1));
-        //         let swizz0012 = |x| vzip1q_f32(x, vuzp1q_f32(x, x));
-        //         let swizz1000 = |x| vsetq_lane_f32(vgetq_lane_f32(x, 1), vdupq_laneq_f32(x, 0), 0);
-        //         let swizz1344 = |x, y| vuzp2q_f32(x, vdupq_laneq_f32(y, 0));
-        //         let swizz0113 = |x| vsetq_lane_f32(vgetq_lane_f32(x, 1), x, 2);
-        //         let swizz2211 = |x| {
-        //             let x = vsetq_lane_f32(vgetq_lane_f32(x, 1), x, 3);
-        //             vzip2q_f32(x, x)
-        //         };
-        //         let swizz2245 = |x, y| vextq_f32(vtrn1q_f32(x, x), y, 1);
-        //         let swizz0233 = |x| vuzp1q_f32(x, vdupq_laneq_f32(x, 3));
-        //         let swizz3332 = |x| vsetq_lane_f32(vgetq_lane_f32(x, 2), vdupq_laneq_f32(x, 3), 3);
-
-        //         // Based on https://github.com/g-truc/glm `glm_mat4_determinant`
-        //         let swp2a = swizz2110(self.z_axis.0);
-        //         let swp3a = swizz3323(self.w_axis.0);
-        //         let swp2b = swizz3323(self.z_axis.0);
-        //         let swp3b = swizz2110(self.w_axis.0);
-        //         let swp2c = swizz2100(self.z_axis.0);
-        //         let swp3c = swizz0021(self.w_axis.0);
-
-        //         let mula = vmulq_f32(swp2a, swp3a);
-        //         let mulb = vmulq_f32(swp2b, swp3b);
-        //         let mulc = vmulq_f32(swp2c, swp3c);
-        //         let sube = vsubq_f32(mula, mulb);
-        //         let subf = vsubq_f32(swizz2323(mulc), mulc);
-
-        //         let subfaca = swizz0012(sube);
-        //         let swpfaca = swizz1000(self.y_axis.0);
-        //         let mulfaca = vmulq_f32(swpfaca, subfaca);
-
-        //         let subtmpb = swizz1344(sube, subf);
-        //         let subfacb = swizz0113(subtmpb);
-        //         let swpfacb = swizz2211(self.y_axis.0);
-        //         let mulfacb = vmulq_f32(swpfacb, subfacb);
-
-        //         let subres = vsubq_f32(mulfaca, mulfacb);
-        //         let subtmpc = swizz2245(sube, subf);
-        //         let subfacc = swizz0233(subtmpc);
-        //         let swpfacc = swizz3332(self.y_axis.0);
-        //         let mulfacc = vmulq_f32(swpfacc, subfacc);
-
-        //         let addres = vaddq_f32(subres, mulfacc);
-        //         const COF: float32x4_t = Vec4::new(1.0, -1.0, 1.0, -1.0).0;
-        //         let detcof = vmulq_f32(addres, COF);
-
-        //         dot4(self.x_axis.0, detcof)
-        //     }
-        #}
+            let detcof = addres * {{ vec4_t }}::new(1.0, -1.0, 1.0, -1.0);
+            self.x_axis.dot(detcof)
         {% elif dim == 2 %}
             self.x_axis.x * self.y_axis.y - self.x_axis.y * self.y_axis.x
         {% elif dim == 3 %}
@@ -1500,10 +1221,10 @@ impl {{ self_t }} {
     #[inline(always)]
     #[must_use]
     fn inverse_checked<const CHECKED: bool>(&self) -> (Self, bool) {
-        {% if self_t == "Mat2" and is_sse2 %}
+        {% if self_t == "Mat2" and is_x86_64 %}
             unsafe {
                 use crate::Vec4;
-                const SIGN: __m128 = crate::sse2::m128_from_f32x4([1.0, -1.0, -1.0, 1.0]);
+                const SIGN: __m128 = crate::x86_64::m128_from_f32x4([1.0, -1.0, -1.0, 1.0]);
                 let abcd = self.0;
                 let dcba = _mm_shuffle_ps(abcd, abcd, 0b00_01_10_11);
                 let prod = _mm_mul_ps(abcd, dcba);
@@ -1520,46 +1241,10 @@ impl {{ self_t }} {
                 let dbca = _mm_shuffle_ps(abcd, abcd, 0b00_10_01_11);
                 (Self(_mm_mul_ps(dbca, tmp)), true)
             }
-        {% elif self_t == "Mat2" and is_wasm %}
-            use crate::Vec4;
-            const SIGN: v128 = crate::wasm::v128_from_f32x4([1.0, -1.0, -1.0, 1.0]);
-            let abcd = self.0;
-            let dcba = i32x4_shuffle::<3, 2, 5, 4>(abcd, abcd);
-            let prod = f32x4_mul(abcd, dcba);
-            let sub = f32x4_sub(prod, i32x4_shuffle::<1, 1, 5, 5>(prod, prod));
-            let det = i32x4_shuffle::<0, 0, 4, 4>(sub, sub);
-            if CHECKED {
-                if Vec4(det) == Vec4::ZERO {
-                    return (Self::ZERO, false);
-                }
-            } else {
-                glam_assert!(Vec4(det).cmpne(Vec4::ZERO).all());
-            }
-            let tmp = f32x4_div(SIGN, det);
-            let dbca = i32x4_shuffle::<3, 1, 6, 4>(abcd, abcd);
-            (Self(f32x4_mul(dbca, tmp)), true)
-        {% elif self_t == "Mat2" and is_coresimd %}
-            use crate::Vec4;
-            const SIGN: f32x4 = f32x4::from_array([1.0, -1.0, -1.0, 1.0]);
-            let abcd = self.0;
-            let dcba = simd_swizzle!(abcd, [3, 2, 1, 0]);
-            let prod = abcd * dcba;
-            let sub = prod - simd_swizzle!(prod, [1, 1, 1, 1]);
-            let det = simd_swizzle!(sub, [0, 0, 0, 0]);
-            if CHECKED {
-                if Vec4(det) == Vec4::ZERO {
-                    return (Self::ZERO, false);
-                }
-            } else {
-                glam_assert!(Vec4(det).cmpne(Vec4::ZERO).all());
-            }
-            let tmp = SIGN / det;
-            let dbca = simd_swizzle!(abcd, [3, 1, 2, 0]);
-            (Self(dbca.mul(tmp)), true)
-        {% elif self_t == "Mat2" and is_neon %}
+        {% elif self_t == "Mat2" and is_aarch64 %}
             unsafe {
                 use crate::Vec4;
-                const SIGN: float32x4_t = crate::neon::f32x4_from_array([1.0, -1.0, -1.0, 1.0]);
+                const SIGN: float32x4_t = crate::aarch64::f32x4_from_array([1.0, -1.0, -1.0, 1.0]);
                 let abcd = self.0;
                 let badc = vrev64q_f32(abcd);
                 let dcba = vextq_f32(badc, badc, 2);
@@ -1612,14 +1297,10 @@ impl {{ self_t }} {
             }
             let inv_det = {{ col_t }}::splat(det.recip());
             (Self::from_cols(tmp0.mul(inv_det), tmp1.mul(inv_det), tmp2.mul(inv_det)).transpose(), true)
-        {% elif self_t == "Mat4" and is_sse2 %}
-            {{ <sse2_mat4_inverse/> }}
-        {% elif self_t == "Mat4" and is_wasm %}
-            {{ <wasm_mat4_inverse/> }}
-        {% elif self_t == "Mat4" and is_coresimd %}
-            {{ <coresimd_mat4_inverse/> }}
-        {% elif self_t == "Mat4" and is_neon %}
-            {{ <neon_mat4_inverse/> }}
+        {% elif self_t == "Mat4" and is_x86_64 %}
+            {{ <x86_64_mat4_inverse/> }}
+        {% elif self_t == "Mat4" and is_aarch64 %}
+            {{ <aarch64_mat4_inverse/> }}
         {% elif dim == 4 %}
             let (m00, m01, m02, m03) = self.x_axis.into();
             let (m10, m11, m12, m13) = self.y_axis.into();
@@ -2290,25 +1971,14 @@ impl {{ self_t }} {
     #[inline]
     #[must_use]
     pub fn project_point3(&self, rhs: {{ vec3_t }}) -> {{ vec3_t }} {
-        #[cfg(feature = "fast-math")]
-        {
-            // Reassociated into a balanced tree and fused: fewer instructions and a
-            // shorter dependency chain. This reorders the sum and skips the
-            // intermediate rounding, so it is gated behind `fast-math`.
-            let a = self.x_axis.mul_add_fast({{ vec4_t }}::splat(rhs.x), self.y_axis.mul(rhs.y));
-            let b = self.z_axis.mul_add_fast({{ vec4_t }}::splat(rhs.z), self.w_axis);
-            let res = a.add(b);
-            res.div(res.w).xyz()
-        }
-        #[cfg(not(feature = "fast-math"))]
-        {
+
             let mut res = self.x_axis.mul(rhs.x);
-            res = self.y_axis.mul(rhs.y).add(res);
-            res = self.z_axis.mul(rhs.z).add(res);
+            res = self.y_axis.mul_add({{ col_t }}::splat(rhs.y), res);
+            res = self.z_axis.mul_add({{ col_t }}::splat(rhs.z), res);
             res = self.w_axis.add(res);
             res = res.div(res.w);
             res.xyz()
-        }
+        
     }
 
     /// Transforms the given 3D vector as a point.
@@ -2327,23 +1997,13 @@ impl {{ self_t }} {
     #[must_use]
     pub fn transform_point3(&self, rhs: {{ vec3_t }}) -> {{ vec3_t }} {
         glam_assert!(self.row(3).abs_diff_eq({{ vec4_t }}::W, 1e-6));
-        #[cfg(feature = "fast-math")]
-        {
-            // Reassociated into a balanced tree and fused: fewer instructions and a
-            // shorter dependency chain. This reorders the sum and skips the
-            // intermediate rounding, so it is gated behind `fast-math`.
-            let a = self.x_axis.mul_add_fast({{ vec4_t }}::splat(rhs.x), self.y_axis.mul(rhs.y));
-            let b = self.z_axis.mul_add_fast({{ vec4_t }}::splat(rhs.z), self.w_axis);
-            a.add(b).xyz()
-        }
-        #[cfg(not(feature = "fast-math"))]
-        {
+
             let mut res = self.x_axis.mul(rhs.x);
-            res = self.y_axis.mul(rhs.y).add(res);
-            res = self.z_axis.mul(rhs.z).add(res);
+            res = self.y_axis.mul_add({{ col_t }}::splat(rhs.y), res);
+            res = self.z_axis.mul_add({{ col_t }}::splat(rhs.z), res);
             res = self.w_axis.add(res);
             res.xyz()
-        }
+        
     }
 
     /// Transforms the given 3D vector as a direction.
@@ -2360,21 +2020,12 @@ impl {{ self_t }} {
     #[must_use]
     pub fn transform_vector3(&self, rhs: {{ vec3_t }}) -> {{ vec3_t }} {
         glam_assert!(self.row(3).abs_diff_eq({{ vec4_t }}::W, 1e-6));
-        #[cfg(feature = "fast-math")]
-        {
-            // Reassociated into a balanced tree and fused: fewer instructions and a
-            // shorter dependency chain. This reorders the sum and skips the
-            // intermediate rounding, so it is gated behind `fast-math`.
-            let a = self.x_axis.mul_add_fast({{ vec4_t }}::splat(rhs.x), self.y_axis.mul(rhs.y));
-            self.z_axis.mul_add_fast({{ vec4_t }}::splat(rhs.z), a).xyz()
-        }
-        #[cfg(not(feature = "fast-math"))]
-        {
+
             let mut res = self.x_axis.mul(rhs.x);
-            res = self.y_axis.mul(rhs.y).add(res);
-            res = self.z_axis.mul(rhs.z).add(res);
+            res = self.y_axis.mul_add({{ col_t }}::splat(rhs.y), res);
+            res = self.z_axis.mul_add({{ col_t }}::splat(rhs.z), res);
             res.xyz()
-        }
+        
     }
 
 {% endif %}
@@ -2392,25 +2043,14 @@ impl {{ self_t }} {
         {% if is_scalar %}
             self.project_point3(rhs.into()).into()
         {% else %}
-            #[cfg(feature = "fast-math")]
-            {
-                // Reassociated into a balanced tree and fused: fewer instructions and a
-                // shorter dependency chain. This reorders the sum and skips the
-                // intermediate rounding, so it is gated behind `fast-math`.
-                let a = self.x_axis.mul_add_fast(rhs.xxxx(), self.y_axis.mul(rhs.yyyy()));
-                let b = self.z_axis.mul_add_fast(rhs.zzzz(), self.w_axis);
-                let res = a.add(b);
-                Vec3A::from_vec4(res.div(res.wwww()))
-            }
-            #[cfg(not(feature = "fast-math"))]
-            {
+
                 let mut res = self.x_axis.mul(rhs.xxxx());
-                res = self.y_axis.mul(rhs.yyyy()).add(res);
-                res = self.z_axis.mul(rhs.zzzz()).add(res);
+                res = self.y_axis.mul_add(rhs.yyyy(), res);
+                res = self.z_axis.mul_add(rhs.zzzz(), res);
                 res = self.w_axis.add(res);
                 res = res.div(res.wwww());
                 Vec3A::from_vec4(res)
-            }
+            
         {% endif %}
     }
 
@@ -2424,23 +2064,13 @@ impl {{ self_t }} {
             self.transform_point3(rhs.into()).into()
         {% else %}
             glam_assert!(self.row(3).abs_diff_eq({{ vec4_t }}::W, 1e-6));
-            #[cfg(feature = "fast-math")]
-            {
-                // Reassociated into a balanced tree and fused: fewer instructions and a
-                // shorter dependency chain. This reorders the sum and skips the
-                // intermediate rounding, so it is gated behind `fast-math`.
-                let a = self.x_axis.mul_add_fast(rhs.xxxx(), self.y_axis.mul(rhs.yyyy()));
-                let b = self.z_axis.mul_add_fast(rhs.zzzz(), self.w_axis);
-                Vec3A::from_vec4(a.add(b))
-            }
-            #[cfg(not(feature = "fast-math"))]
-            {
+
                 let mut res = self.x_axis.mul(rhs.xxxx());
-                res = self.y_axis.mul(rhs.yyyy()).add(res);
-                res = self.z_axis.mul(rhs.zzzz()).add(res);
+                res = self.y_axis.mul_add(rhs.yyyy(), res);
+                res = self.z_axis.mul_add(rhs.zzzz(), res);
                 res = self.w_axis.add(res);
                 Vec3A::from_vec4(res)
-            }
+            
         {% endif %}
     }
 
@@ -2454,21 +2084,12 @@ impl {{ self_t }} {
             self.transform_vector3(rhs.into()).into()
         {% else %}
             glam_assert!(self.row(3).abs_diff_eq({{ vec4_t }}::W, 1e-6));
-            #[cfg(feature = "fast-math")]
-            {
-                // Reassociated into a balanced tree and fused: fewer instructions and a
-                // shorter dependency chain. This reorders the sum and skips the
-                // intermediate rounding, so it is gated behind `fast-math`.
-                let a = self.x_axis.mul_add_fast(rhs.xxxx(), self.y_axis.mul(rhs.yyyy()));
-                Vec3A::from_vec4(self.z_axis.mul_add_fast(rhs.zzzz(), a))
-            }
-            #[cfg(not(feature = "fast-math"))]
-            {
+
                 let mut res = self.x_axis.mul(rhs.xxxx());
-                res = self.y_axis.mul(rhs.yyyy()).add(res);
-                res = self.z_axis.mul(rhs.zzzz()).add(res);
+                res = self.y_axis.mul_add(rhs.yyyy(), res);
+                res = self.z_axis.mul_add(rhs.zzzz(), res);
                 Vec3A::from_vec4(res)
-            }
+            
         {% endif %}
     }
 {% endif %}
@@ -2477,7 +2098,7 @@ impl {{ self_t }} {
     #[inline]
     #[must_use]
     pub fn mul_vec{{ dim }}(&self, rhs: {{ vecn_t }}) -> {{ vecn_t }} {
-        {% if self_t == "Mat2" and is_sse2 %}
+        {% if self_t == "Mat2" and is_x86_64 %}
             unsafe {
                 use core::mem::MaybeUninit;
                 use crate::Align16;
@@ -2490,26 +2111,7 @@ impl {{ self_t }} {
                 _mm_store_ps(out.as_mut_ptr().cast(), result);
                 out.assume_init().0
             }
-        {% elif self_t == "Mat2" and is_wasm %}
-            use core::mem::MaybeUninit;
-            let abcd = self.0;
-            let xxyy = f32x4(rhs.x, rhs.x, rhs.y, rhs.y);
-            let axbxcydy = f32x4_mul(abcd, xxyy);
-            let cydyaxbx = i32x4_shuffle::<2, 3, 4, 5>(axbxcydy, axbxcydy);
-            let result = f32x4_add(axbxcydy, cydyaxbx);
-            let mut out: MaybeUninit<v128> = MaybeUninit::uninit();
-            unsafe {
-                v128_store(out.as_mut_ptr(), result);
-                *(&out.assume_init() as *const v128 as *const Vec2)
-            }
-        {% elif self_t == "Mat2" and is_coresimd %}
-            let abcd = self.0;
-            let xxyy = f32x4::from_array([rhs.x, rhs.x, rhs.y, rhs.y]);
-            let axbxcydy = abcd.mul(xxyy);
-            let cydyaxbx = simd_swizzle!(axbxcydy, [2, 3, 0, 1]);
-            let result = axbxcydy.add(cydyaxbx);
-            unsafe { *(&result as *const f32x4 as *const Vec2) }
-        {% elif self_t == "Mat2" and is_neon %}
+        {% elif self_t == "Mat2" and is_aarch64 %}
             unsafe {
                 let abcd = self.0;
                 let xxyy = vld1q_f32([rhs.x, rhs.x, rhs.y, rhs.y].as_ptr());
@@ -2530,58 +2132,30 @@ impl {{ self_t }} {
             {# use the Vec3A implementation #}
             self.mul_vec3a(rhs.into()).into()
         {% elif dim == 3 %}
-            #[cfg(feature = "fast-math")]
-            {
-                // Fused. On the scalar backends this lowers to an FMA where the target has
-                // one and a plain multiply and add where it does not, and lets the compiler
-                // reassociate, so it is gated behind `fast-math`.
-                let a = self.x_axis.mul_add_fast({{ col_t }}::splat(rhs.x), self.y_axis.mul(rhs.y));
-                self.z_axis.mul_add_fast({{ col_t }}::splat(rhs.z), a)
-            }
-            #[cfg(not(feature = "fast-math"))]
-            {
+
                 let mut res = self.x_axis.mul(rhs.x);
-                res = res.add(self.y_axis.mul(rhs.y));
-                res = res.add(self.z_axis.mul(rhs.z));
+                res = self.y_axis.mul_add({{ col_t }}::splat(rhs.y), res);
+                res = self.z_axis.mul_add({{ col_t }}::splat(rhs.z), res);
                 res
-            }
+            
         {% elif dim == 4 %}
             {% if is_scalar %}
-                #[cfg(feature = "fast-math")]
-                {
-                    // Reassociated into a balanced tree and fused. See the comment on the
-                    // SIMD path below; gated behind `fast-math` for the same reason.
-                    let a = self.x_axis.mul_add_fast({{ col_t }}::splat(rhs.x), self.y_axis.mul(rhs.y));
-                    let b = self.z_axis.mul_add_fast({{ col_t }}::splat(rhs.z), self.w_axis.mul(rhs.w));
-                    a.add(b)
-                }
-                #[cfg(not(feature = "fast-math"))]
-                {
+
                     let mut res = self.x_axis.mul(rhs.x);
-                    res = res.add(self.y_axis.mul(rhs.y));
-                    res = res.add(self.z_axis.mul(rhs.z));
-                    res = res.add(self.w_axis.mul(rhs.w));
+                    res = self.y_axis.mul_add({{ col_t }}::splat(rhs.y), res);
+                    res = self.z_axis.mul_add({{ col_t }}::splat(rhs.z), res);
+                    res = self.w_axis.mul_add({{ col_t }}::splat(rhs.w), res);
                     res
-                }
+                
             {% else %}
                 {# use swizzles if simd #}
-                #[cfg(feature = "fast-math")]
-                {
-                    // Reassociated into a balanced tree and fused: fewer instructions and a
-                    // shorter dependency chain. This reorders the sum and skips the
-                    // intermediate rounding, so it is gated behind `fast-math`.
-                    let a = self.x_axis.mul_add_fast(rhs.xxxx(), self.y_axis.mul(rhs.yyyy()));
-                    let b = self.z_axis.mul_add_fast(rhs.zzzz(), self.w_axis.mul(rhs.wwww()));
-                    a.add(b)
-                }
-                #[cfg(not(feature = "fast-math"))]
-                {
+
                     let mut res = self.x_axis.mul(rhs.xxxx());
-                    res = res.add(self.y_axis.mul(rhs.yyyy()));
-                    res = res.add(self.z_axis.mul(rhs.zzzz()));
-                    res = res.add(self.w_axis.mul(rhs.wwww()));
+                    res = self.y_axis.mul_add(rhs.yyyy(), res);
+                    res = self.z_axis.mul_add(rhs.zzzz(), res);
+                    res = self.w_axis.mul_add(rhs.wwww(), res);
                     res
-                }
+                
             {% endif %}
         {% endif %}
     }
@@ -2598,21 +2172,12 @@ impl {{ self_t }} {
     #[inline]
     #[must_use]
     pub fn mul_vec3a(&self, rhs: Vec3A) -> Vec3A {
-        #[cfg(feature = "fast-math")]
-        {
-            // Reassociated into a balanced tree and fused: fewer instructions and a
-            // shorter dependency chain. This reorders the sum and skips the
-            // intermediate rounding, so it is gated behind `fast-math`.
-            let a = self.x_axis.mul_add_fast(rhs.xxx(), self.y_axis.mul(rhs.yyy()));
-            self.z_axis.mul_add_fast(rhs.zzz(), a)
-        }
-        #[cfg(not(feature = "fast-math"))]
-        {
+
             let mut res = self.x_axis.mul(rhs.xxx());
             res = res.add(self.y_axis.mul(rhs.yyy()));
             res = res.add(self.z_axis.mul(rhs.zzz()));
             res
-        }
+        
     }
 {% endif %}
 
@@ -2669,13 +2234,9 @@ impl {{ self_t }} {
     #[inline]
     #[must_use]
     pub fn mul_scalar(&self, rhs: {{ scalar_t }}) -> Self {
-        {% if self_t == "Mat2" and is_sse2 %}
+        {% if self_t == "Mat2" and is_x86_64 %}
             Self(unsafe { _mm_mul_ps(self.0, _mm_set_ps1(rhs)) })
-        {% elif self_t == "Mat2" and is_wasm %}
-            Self(f32x4_mul(self.0, f32x4_splat(rhs)))
-        {% elif self_t == "Mat2" and is_coresimd %}
-            Self(self.0 * f32x4::splat(rhs))
-        {% elif self_t == "Mat2" and is_neon %}
+        {% elif self_t == "Mat2" and is_aarch64 %}
             Self(unsafe { vmulq_f32(self.0, vld1q_dup_f32(&rhs)) })
         {% else %}
             Self::from_cols(
@@ -2703,13 +2264,9 @@ impl {{ self_t }} {
     #[inline]
     #[must_use]
     pub fn div_scalar(&self, rhs: {{ scalar_t }}) -> Self {
-        {% if self_t == "Mat2" and is_sse2 %}
+        {% if self_t == "Mat2" and is_x86_64 %}
             Self(unsafe { _mm_div_ps(self.0, _mm_set_ps1(rhs)) })
-        {% elif self_t == "Mat2" and is_wasm %}
-            Self(f32x4_div(self.0, f32x4_splat(rhs)))
-        {% elif self_t == "Mat2" and is_coresimd %}
-            Self(self.0 / f32x4::splat(rhs))
-        {% elif self_t == "Mat2" and is_neon %}
+        {% elif self_t == "Mat2" and is_aarch64 %}
             Self(unsafe { vdivq_f32(self.0, vld1q_dup_f32(&rhs)) })
         {% else %}
             let rhs = {{ col_t }}::splat(rhs);
@@ -2797,13 +2354,9 @@ impl Add for {{ self_t }} {
     type Output = Self;
     #[inline]
     fn add(self, rhs: Self) -> Self {
-        {% if self_t == "Mat2" and is_sse2 %}
+        {% if self_t == "Mat2" and is_x86_64 %}
             Self(unsafe { _mm_add_ps(self.0, rhs.0) })
-        {% elif self_t == "Mat2" and is_wasm %}
-            Self(f32x4_add(self.0, rhs.0))
-        {% elif self_t == "Mat2" and is_coresimd %}
-            Self(self.0 + rhs.0)
-        {% elif self_t == "Mat2" and is_neon %}
+        {% elif self_t == "Mat2" and is_aarch64 %}
             Self(unsafe { vaddq_f32(self.0, rhs.0) })
         {% else %}
             Self::from_cols(
@@ -2823,13 +2376,9 @@ impl Sub for {{ self_t }} {
     type Output = Self;
     #[inline]
     fn sub(self, rhs: Self) -> Self {
-        {% if self_t == "Mat2" and is_sse2 %}
+        {% if self_t == "Mat2" and is_x86_64 %}
             Self(unsafe { _mm_sub_ps(self.0, rhs.0) })
-        {% elif self_t == "Mat2" and is_wasm %}
-            Self(f32x4_sub(self.0, rhs.0))
-        {% elif self_t == "Mat2" and is_coresimd %}
-            Self(self.0 - rhs.0)
-        {% elif self_t == "Mat2" and is_neon %}
+        {% elif self_t == "Mat2" and is_aarch64 %}
             Self(unsafe { vsubq_f32(self.0, rhs.0) })
         {% else %}
             Self::from_cols(
@@ -2849,13 +2398,9 @@ impl Neg for {{ self_t }} {
     type Output = Self;
     #[inline]
     fn neg(self) -> Self::Output {
-        {% if self_t == "Mat2" and is_sse2 %}
+        {% if self_t == "Mat2" and is_x86_64 %}
             Self(unsafe { _mm_xor_ps(self.0, _mm_set1_ps(-0.0)) })
-        {% elif self_t == "Mat2" and is_wasm %}
-            Self(f32x4_neg(self.0))
-        {% elif self_t == "Mat2" and is_coresimd %}
-            Self(-self.0)
-        {% elif self_t == "Mat2" and is_neon %}
+        {% elif self_t == "Mat2" and is_aarch64 %}
             Self(unsafe { vnegq_f32(self.0) })
         {% else %}
             Self::from_cols(
@@ -2873,7 +2418,7 @@ impl Mul for {{ self_t }} {
     type Output = Self;
     #[inline]
     fn mul(self, rhs: Self) -> Self {
-        {% if self_t == "Mat2" and is_sse2 %}
+        {% if self_t == "Mat2" and is_x86_64 %}
             unsafe {
                 let abcd = self.0;
                 let rhs = rhs.0;
@@ -2887,30 +2432,7 @@ impl Mul for {{ self_t }} {
                 let result1 = _mm_add_ps(axbxcydy1, cydyaxbx1);
                 Self(_mm_shuffle_ps(result0, result1, 0b01_00_01_00))
             }
-        {% elif self_t == "Mat2" and is_wasm %}
-            let abcd = self.0;
-            let rhs = rhs.0;
-            let xxyy0 = i32x4_shuffle::<0, 0, 5, 5>(rhs, rhs);
-            let xxyy1 = i32x4_shuffle::<2, 2, 7, 7>(rhs, rhs);
-            let axbxcydy0 = f32x4_mul(abcd, xxyy0);
-            let axbxcydy1 = f32x4_mul(abcd, xxyy1);
-            let cydyaxbx0 = i32x4_shuffle::<2, 3, 4, 5>(axbxcydy0, axbxcydy0);
-            let cydyaxbx1 = i32x4_shuffle::<2, 3, 4, 5>(axbxcydy1, axbxcydy1);
-            let result0 = f32x4_add(axbxcydy0, cydyaxbx0);
-            let result1 = f32x4_add(axbxcydy1, cydyaxbx1);
-            Self(i32x4_shuffle::<0, 1, 4, 5>(result0, result1))
-        {% elif self_t == "Mat2" and is_coresimd %}
-            let abcd = self.0;
-            let xxyy0 = simd_swizzle!(rhs.0, [0, 0, 1, 1]);
-            let xxyy1 = simd_swizzle!(rhs.0, [2, 2, 3, 3]);
-            let axbxcydy0 = abcd * xxyy0;
-            let axbxcydy1 = abcd * xxyy1;
-            let cydyaxbx0 = simd_swizzle!(axbxcydy0, [2, 3, 0, 1]);
-            let cydyaxbx1 = simd_swizzle!(axbxcydy1, [2, 3, 0, 1]);
-            let result0 = axbxcydy0 + cydyaxbx0;
-            let result1 = axbxcydy1 + cydyaxbx1;
-            Self(simd_swizzle!(result0, result1, [0, 1, 4, 5]))
-        {% elif self_t == "Mat2" and is_neon %}
+        {% elif self_t == "Mat2" and is_aarch64 %}
             unsafe {
                 let abcd = self.0;
                 let xxyy0 = vzip1q_f32(rhs.0, rhs.0);
@@ -2925,6 +2447,8 @@ impl Mul for {{ self_t }} {
                         vsetq_lane_u64(vgetq_lane_u64(vreinterpretq_u64_f32(result1), 0),
                         vreinterpretq_u64_f32(result0), 1)))
             }
+        {% elif self_t == "Mat4" and is_x86_64 %}
+            {{ <x86_64_mat4_avx_mul/> }}
         {% else %}
             Self::from_cols(
                 {% for axis in axes %}
@@ -2979,13 +2503,9 @@ impl Div<{{ self_t }}> for {{ scalar_t }} {
     type Output = {{ self_t }};
     #[inline]
     fn div(self, rhs: {{ self_t }}) -> Self::Output {
-        {% if self_t == "Mat2" and is_sse2 %}
+        {% if self_t == "Mat2" and is_x86_64 %}
             {{ self_t }}(unsafe { _mm_div_ps(_mm_set_ps1(self), rhs.0) })
-        {% elif self_t == "Mat2" and is_wasm %}
-            {{ self_t }}(f32x4_div(f32x4_splat(self), rhs.0))
-        {% elif self_t == "Mat2" and is_coresimd %}
-            {{ self_t }}(f32x4::splat(self) / rhs.0)
-        {% elif self_t == "Mat2" and is_neon %}
+        {% elif self_t == "Mat2" and is_aarch64 %}
             {{ self_t }}(unsafe { vdivq_f32(vld1q_dup_f32(&self), rhs.0) })
         {% else %}
             {{ self_t }}::from_cols(

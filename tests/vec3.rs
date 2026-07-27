@@ -1326,128 +1326,36 @@ macro_rules! impl_vec3_float_tests {
         });
 
         glam_test!(test_min_max_nan, {
-            // NaN propogation is not consistent between scalar and different simd architectures.
-            // The purpose of this test is to document the different behaviour.
-            if $vec3::USES_SCALAR_MATH {
-                assert!(!$vec3::NAN.min($vec3::ZERO).is_nan_mask().all());
-                assert!($vec3::ZERO.min($vec3::NAN).is_nan_mask().all());
-                assert!($vec3::NAN.min($vec3::NAN).is_nan_mask().all());
-                assert!(!$vec3::NAN.max($vec3::ZERO).is_nan_mask().all());
-                assert!($vec3::ZERO.max($vec3::NAN).is_nan_mask().all());
-                assert!($vec3::NAN.max($vec3::NAN).is_nan_mask().all());
-            } else if $vec3::USES_NEON {
-                assert!($vec3::NAN.min($vec3::ZERO).is_nan_mask().all());
-                assert!($vec3::ZERO.min($vec3::NAN).is_nan_mask().all());
-                assert!($vec3::NAN.min($vec3::NAN).is_nan_mask().all());
-                assert!($vec3::NAN.max($vec3::ZERO).is_nan_mask().all());
-                assert!($vec3::ZERO.max($vec3::NAN).is_nan_mask().all());
-                assert!($vec3::NAN.max($vec3::NAN).is_nan_mask().all());
-            } else if $vec3::USES_SSE2 {
-                assert!(!$vec3::NAN.min($vec3::ZERO).is_nan_mask().all());
-                assert!($vec3::ZERO.min($vec3::NAN).is_nan_mask().all());
-                assert!($vec3::NAN.min($vec3::NAN).is_nan_mask().all());
-                assert!(!$vec3::NAN.max($vec3::ZERO).is_nan_mask().all());
-                assert!($vec3::ZERO.max($vec3::NAN).is_nan_mask().all());
-                assert!($vec3::NAN.max($vec3::NAN).is_nan_mask().all());
-            } else if $vec3::USES_WASM_SIMD {
-                assert!($vec3::NAN.min($vec3::ZERO).is_nan_mask().all());
-                assert!(!$vec3::ZERO.min($vec3::NAN).is_nan_mask().all());
-                assert!($vec3::NAN.min($vec3::NAN).is_nan_mask().all());
-                assert!($vec3::NAN.max($vec3::ZERO).is_nan_mask().all());
-                assert!(!$vec3::ZERO.max($vec3::NAN).is_nan_mask().all());
-                assert!($vec3::NAN.max($vec3::NAN).is_nan_mask().all());
-            } else if $vec3::USES_CORE_SIMD {
-                assert!(!$vec3::NAN.min($vec3::ZERO).is_nan_mask().all());
-                assert!($vec3::ZERO.min($vec3::NAN).is_nan_mask().all());
-                assert!($vec3::NAN.min($vec3::NAN).is_nan_mask().all());
-                assert!(!$vec3::NAN.max($vec3::ZERO).is_nan_mask().all());
-                assert!($vec3::ZERO.max($vec3::NAN).is_nan_mask().all());
-                assert!($vec3::NAN.max($vec3::NAN).is_nan_mask().all());
-            }
+            // Every backend uses the same rule. See rewrite.md.
+            assert!(!$vec3::NAN.min($vec3::ZERO).is_nan_mask().all());
+            assert!($vec3::ZERO.min($vec3::NAN).is_nan_mask().all());
+            assert!($vec3::NAN.min($vec3::NAN).is_nan_mask().all());
+            assert!(!$vec3::NAN.max($vec3::ZERO).is_nan_mask().all());
+            assert!($vec3::ZERO.max($vec3::NAN).is_nan_mask().all());
+            assert!($vec3::NAN.max($vec3::NAN).is_nan_mask().all());
+            
         });
 
         glam_test!(test_min_max_element_nan, {
-            // NaN propogation is not consistent between scalar and different simd architectures.
-            // The purpose of this test is to document the different behaviour.
+            // Every backend uses the same rule. See rewrite.md.
             let v = $vec3::new(3.0, 2.0, $t::NAN);
-            if $vec3::USES_SCALAR_MATH {
-                assert!(v.min_element().is_nan());
-                assert!(v.max_element().is_nan());
-            } else if $vec3::USES_NEON {
-                assert_eq!(2.0, v.min_element());
-                assert_eq!(3.0, v.max_element());
-            } else if $vec3::USES_SSE2 {
-                assert!(v.min_element().is_nan());
-                assert!(v.max_element().is_nan());
-            } else if $vec3::USES_WASM_SIMD {
-                assert_eq!(2.0, v.min_element());
-                assert_eq!(3.0, v.max_element());
-            } else if $vec3::USES_CORE_SIMD {
-                assert!(v.min_element().is_nan());
-                assert!(v.max_element().is_nan());
-            }
+            assert!(v.min_element().is_nan());
+            assert!(v.max_element().is_nan());
+            
         });
 
         glam_test!(test_clamp_nan, {
-            // NaN propogation is not consistent between scalar and different simd architectures.
-            // The purpose of this test is to document the different behaviour.
-            if $vec3::USES_SCALAR_MATH {
-                assert_eq!($vec3::NEG_ONE, $vec3::NAN.clamp($vec3::NEG_ONE, $vec3::ONE));
-                #[cfg(not(any(feature = "debug-glam-assert", feature = "glam-assert")))]
-                {
-                    assert_eq!($vec3::ONE, $vec3::NAN.clamp($vec3::NAN, $vec3::ONE));
-                    assert!($vec3::NAN
-                        .clamp($vec3::NEG_ONE, $vec3::NAN)
-                        .is_nan_mask()
-                        .all());
-                }
-            } else if $vec3::USES_NEON {
+            // Every backend uses the same rule. See rewrite.md.
+            assert_eq!($vec3::NEG_ONE, $vec3::NAN.clamp($vec3::NEG_ONE, $vec3::ONE));
+            #[cfg(not(any(feature = "debug-glam-assert", feature = "glam-assert")))]
+            {
+                assert_eq!($vec3::ONE, $vec3::NAN.clamp($vec3::NAN, $vec3::ONE));
                 assert!($vec3::NAN
-                    .clamp($vec3::NEG_ONE, $vec3::ONE)
+                    .clamp($vec3::NEG_ONE, $vec3::NAN)
                     .is_nan_mask()
                     .all());
-                #[cfg(not(any(feature = "debug-glam-assert", feature = "glam-assert")))]
-                {
-                    assert!($vec3::NAN.clamp($vec3::NAN, $vec3::ONE).is_nan_mask().all());
-                    assert!($vec3::NAN
-                        .clamp($vec3::NEG_ONE, $vec3::NAN)
-                        .is_nan_mask()
-                        .all());
-                }
-            } else if $vec3::USES_SSE2 {
-                assert_eq!($vec3::NEG_ONE, $vec3::NAN.clamp($vec3::NEG_ONE, $vec3::ONE));
-                #[cfg(not(any(feature = "debug-glam-assert", feature = "glam-assert")))]
-                {
-                    assert_eq!($vec3::ONE, $vec3::NAN.clamp($vec3::NAN, $vec3::ONE));
-                    assert!($vec3::NAN
-                        .clamp($vec3::NEG_ONE, $vec3::NAN)
-                        .is_nan_mask()
-                        .all());
-                }
-            } else if $vec3::USES_WASM_SIMD {
-                assert!($vec3::NAN
-                    .clamp($vec3::NEG_ONE, $vec3::ONE)
-                    .is_nan_mask()
-                    .all());
-                #[cfg(not(any(feature = "debug-glam-assert", feature = "glam-assert")))]
-                {
-                    assert!($vec3::NAN.clamp($vec3::NAN, $vec3::ONE).is_nan_mask().all());
-                    assert!($vec3::NAN
-                        .clamp($vec3::NEG_ONE, $vec3::NAN)
-                        .is_nan_mask()
-                        .all());
-                }
-            } else if $vec3::USES_CORE_SIMD {
-                assert_eq!($vec3::NEG_ONE, $vec3::NAN.clamp($vec3::NEG_ONE, $vec3::ONE));
-                #[cfg(not(any(feature = "debug-glam-assert", feature = "glam-assert")))]
-                {
-                    assert_eq!($vec3::ONE, $vec3::NAN.clamp($vec3::NAN, $vec3::ONE));
-                    assert!($vec3::NAN
-                        .clamp($vec3::NEG_ONE, $vec3::NAN)
-                        .is_nan_mask()
-                        .all());
-                }
             }
+            
         });
 
         glam_test!(test_signum, {
@@ -2151,8 +2059,6 @@ mod vec3 {
         use glam::I64Vec3;
         #[cfg(feature = "i8")]
         use glam::I8Vec3;
-        #[cfg(feature = "isize")]
-        use glam::ISizeVec3;
         #[cfg(feature = "i32")]
         use glam::IVec3;
         #[cfg(feature = "u16")]
@@ -2161,8 +2067,6 @@ mod vec3 {
         use glam::U64Vec3;
         #[cfg(feature = "u8")]
         use glam::U8Vec3;
-        #[cfg(feature = "usize")]
-        use glam::USizeVec3;
         #[cfg(feature = "u32")]
         use glam::UVec3;
         #[allow(unused)]
@@ -2188,10 +2092,6 @@ mod vec3 {
         impl_as_from_i64vec!(3);
         #[cfg(feature = "u64")]
         impl_as_from_u64vec!(3);
-        #[cfg(feature = "isize")]
-        impl_as_from_isizevec!(3);
-        #[cfg(feature = "usize")]
-        impl_as_from_usizevec!(3);
     });
 
     impl_vec3_float_tests!(f32, vec3, Vec3, BVec3, Quat);
@@ -2217,10 +2117,7 @@ mod vec3a {
         assert!(b.cmpeq(Vec3A::splat(1.0)).all());
     });
 
-    #[cfg(all(
-        target_feature = "sse2",
-        not(any(feature = "core-simd", feature = "scalar-math"))
-    ))]
+    #[cfg(all(target_feature = "sse2", not(feature = "scalar-math")))]
     #[test]
     fn test_m128() {
         #[cfg(target_arch = "x86")]
@@ -2304,8 +2201,6 @@ macro_rules! impl_vec3_i8_try_from_tests {
             impl_try_from_pair_with_max_error!("u32", $src, UVec3, u32::MAX, 3);
             impl_try_from_pair_with_max_error!("i64", $src, I64Vec3, i64::MAX, 3);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec3, u64::MAX, 3);
-            impl_try_from_pair_with_max_error!("isize", $src, ISizeVec3, isize::MAX, 3);
-            impl_try_from_pair_with_max_error!("usize", $src, USizeVec3, usize::MAX, 3);
         });
     };
 }
@@ -2321,8 +2216,6 @@ macro_rules! impl_vec3_u8_try_from_tests {
             impl_try_from_pair_with_max_error!("u32", $src, UVec3, u32::MAX, 3);
             impl_try_from_pair_with_negmax_error!("i64", $src, I64Vec3, i64::MAX, 3);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec3, u64::MAX, 3);
-            impl_try_from_pair_with_max_error!("isize", $src, ISizeVec3, isize::MAX, 3);
-            impl_try_from_pair_with_max_error!("usize", $src, USizeVec3, usize::MAX, 3);
         });
     };
 }
@@ -2338,8 +2231,6 @@ macro_rules! impl_vec3_i16_try_from_tests {
             impl_try_from_pair_with_max_error!("u32", $src, UVec3, u32::MAX, 3);
             impl_try_from_pair_with_max_error!("i64", $src, I64Vec3, i64::MAX, 3);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec3, u64::MAX, 3);
-            impl_try_from_pair_with_max_error!("isize", $src, ISizeVec3, isize::MAX, 3);
-            impl_try_from_pair_with_max_error!("usize", $src, USizeVec3, usize::MAX, 3);
         });
     };
 }
@@ -2355,8 +2246,6 @@ macro_rules! impl_vec3_u16_try_from_tests {
             impl_try_from_pair_with_max_error!("u32", $src, UVec3, u32::MAX, 3);
             impl_try_from_pair_with_negmax_error!("i64", $src, I64Vec3, i64::MAX, 3);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec3, u64::MAX, 3);
-            impl_try_from_pair_with_max_error!("isize", $src, ISizeVec3, isize::MAX, 3);
-            impl_try_from_pair_with_max_error!("usize", $src, USizeVec3, usize::MAX, 3);
         });
     };
 }
@@ -2372,15 +2261,6 @@ macro_rules! impl_vec3_i32_try_from_tests {
             impl_try_from_pair_with_max_error!("u32", $src, UVec3, u32::MAX, 3);
             impl_try_from_pair_with_max_error!("i64", $src, I64Vec3, i64::MAX, 3);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec3, u64::MAX, 3);
-            impl_try_from_pair_with_sizeof_max_error!(
-                "isize",
-                $src,
-                ISizeVec3,
-                isize,
-                isize::MAX,
-                3
-            );
-            impl_try_from_pair_with_max_error!("usize", $src, USizeVec3, usize::MAX, 3);
         });
     };
 }
@@ -2396,22 +2276,6 @@ macro_rules! impl_vec3_u32_try_from_tests {
             impl_try_from_pair_with_negative_error!("i32", $src, IVec3, 3);
             impl_try_from_pair_with_negmax_error!("i64", $src, I64Vec3, i64::MAX, 3);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec3, u64::MAX, 3);
-            impl_try_from_pair_with_sizeof_max_error!(
-                "isize",
-                $src,
-                ISizeVec3,
-                isize,
-                isize::MAX,
-                3
-            );
-            impl_try_from_pair_with_sizeof_max_error!(
-                "usize",
-                $src,
-                USizeVec3,
-                usize,
-                usize::MAX,
-                3
-            );
         });
     };
 }
@@ -2427,15 +2291,6 @@ macro_rules! impl_vec3_i64_try_from_tests {
             impl_from_pair_infallible!("i32", $src, IVec3, 3);
             impl_from_pair_infallible!("u32", $src, UVec3, 3);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec3, u64::MAX, 3);
-            impl_try_from_pair_no_error!("isize", $src, ISizeVec3, 3);
-            impl_try_from_pair_with_sizeof_max_error!(
-                "usize",
-                $src,
-                USizeVec3,
-                usize,
-                usize::MAX,
-                3
-            );
         });
     };
 }
@@ -2450,46 +2305,14 @@ macro_rules! impl_vec3_u64_try_from_tests {
             impl_from_pair_infallible!("u16", $src, U16Vec3, 3);
             impl_try_from_pair_with_negative_error!("i32", $src, IVec3, 3);
             impl_from_pair_infallible!("u32", $src, UVec3, 3);
-            impl_try_from_pair_with_negative_error!("isize", $src, ISizeVec3, 3);
             impl_try_from_pair_with_negative_error!("i64", $src, I64Vec3, 3);
-            impl_try_from_pair_no_error!("usize", $src, USizeVec3, 3);
         });
     };
 }
 
-#[cfg(feature = "isize")]
-macro_rules! impl_vec3_isize_try_from_tests {
-    ($src:ident, $scalar:ty) => {
-        glam_test!(test_try_from, {
-            impl_from_pair_infallible!("i8", $src, I8Vec3, 3);
-            impl_from_pair_infallible!("u8", $src, U8Vec3, 3);
-            impl_from_pair_infallible!("i16", $src, I16Vec3, 3);
-            impl_try_from_pair_no_error!("u16", $src, U16Vec3, 3);
-            impl_try_from_pair_no_error!("i32", $src, IVec3, 3);
-            impl_try_from_pair_no_error!("u32", $src, UVec3, 3);
-            impl_try_from_pair_with_max_error!("u64", $src, U64Vec3, u64::MAX, 3);
-            impl_try_from_pair_no_error!("i64", $src, I64Vec3, 3);
-            impl_try_from_pair_with_max_error!("usize", $src, USizeVec3, usize::MAX, 3);
-        });
-    };
-}
 
-#[cfg(feature = "usize")]
-macro_rules! impl_vec3_usize_try_from_tests {
-    ($src:ident, $scalar:ty) => {
-        glam_test!(test_try_from, {
-            impl_try_from_pair_with_negative_error!("i8", $src, I8Vec3, 3);
-            impl_from_pair_infallible!("u8", $src, U8Vec3, 3);
-            impl_try_from_pair_with_negative_error!("i16", $src, I16Vec3, 3);
-            impl_from_pair_infallible!("u16", $src, U16Vec3, 3);
-            impl_try_from_pair_with_negative_error!("i32", $src, IVec3, 3);
-            impl_try_from_pair_no_error!("u32", $src, UVec3, 3);
-            impl_try_from_pair_no_error!("u64", $src, U64Vec3, 3);
-            impl_try_from_pair_with_negative_error!("i64", $src, I64Vec3, 3);
-            impl_try_from_pair_with_negative_error!("isize", $src, ISizeVec3, 3);
-        });
-    };
-}
+
+
 
 #[cfg(feature = "i8")]
 mod i8vec3 {
@@ -2497,8 +2320,6 @@ mod i8vec3 {
     use glam::I16Vec3;
     #[cfg(feature = "i64")]
     use glam::I64Vec3;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec3;
     #[cfg(feature = "i32")]
     use glam::IVec3;
     #[cfg(feature = "u16")]
@@ -2507,8 +2328,6 @@ mod i8vec3 {
     use glam::U64Vec3;
     #[cfg(feature = "u8")]
     use glam::U8Vec3;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec3;
     #[cfg(feature = "u32")]
     use glam::UVec3;
     use glam::{i8vec3, BVec3, I8Vec3};
@@ -2541,16 +2360,12 @@ mod u8vec3 {
     use glam::I64Vec3;
     #[cfg(feature = "i8")]
     use glam::I8Vec3;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec3;
     #[cfg(feature = "i32")]
     use glam::IVec3;
     #[cfg(feature = "u16")]
     use glam::U16Vec3;
     #[cfg(feature = "u64")]
     use glam::U64Vec3;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec3;
     #[cfg(feature = "u32")]
     use glam::UVec3;
     use glam::{u8vec3, BVec3, U8Vec3};
@@ -2581,8 +2396,6 @@ mod i16vec3 {
     use glam::I64Vec3;
     #[cfg(feature = "i8")]
     use glam::I8Vec3;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec3;
     #[cfg(feature = "i32")]
     use glam::IVec3;
     #[cfg(feature = "u16")]
@@ -2591,8 +2404,6 @@ mod i16vec3 {
     use glam::U64Vec3;
     #[cfg(feature = "u8")]
     use glam::U8Vec3;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec3;
     #[cfg(feature = "u32")]
     use glam::UVec3;
     use glam::{i16vec3, BVec3, I16Vec3};
@@ -2625,16 +2436,12 @@ mod u16vec3 {
     use glam::I64Vec3;
     #[cfg(feature = "i8")]
     use glam::I8Vec3;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec3;
     #[cfg(feature = "i32")]
     use glam::IVec3;
     #[cfg(feature = "u64")]
     use glam::U64Vec3;
     #[cfg(feature = "u8")]
     use glam::U8Vec3;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec3;
     #[cfg(feature = "u32")]
     use glam::UVec3;
     use glam::{u16vec3, BVec3, U16Vec3};
@@ -2667,16 +2474,12 @@ mod ivec3 {
     use glam::I64Vec3;
     #[cfg(feature = "i8")]
     use glam::I8Vec3;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec3;
     #[cfg(feature = "u16")]
     use glam::U16Vec3;
     #[cfg(feature = "u64")]
     use glam::U64Vec3;
     #[cfg(feature = "u8")]
     use glam::U8Vec3;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec3;
     #[cfg(feature = "u32")]
     use glam::UVec3;
     use glam::{ivec3, BVec3, IVec3};
@@ -2709,8 +2512,6 @@ mod uvec3 {
     use glam::I64Vec3;
     #[cfg(feature = "i8")]
     use glam::I8Vec3;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec3;
     #[cfg(feature = "i32")]
     use glam::IVec3;
     #[cfg(feature = "u16")]
@@ -2719,8 +2520,6 @@ mod uvec3 {
     use glam::U64Vec3;
     #[cfg(feature = "u8")]
     use glam::U8Vec3;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec3;
     use glam::{uvec3, BVec3, UVec3};
 
     glam_test!(test_align, {
@@ -2749,8 +2548,6 @@ mod i64vec3 {
     use glam::I16Vec3;
     #[cfg(feature = "i8")]
     use glam::I8Vec3;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec3;
     #[cfg(feature = "i32")]
     use glam::IVec3;
     #[cfg(feature = "u16")]
@@ -2759,8 +2556,6 @@ mod i64vec3 {
     use glam::U64Vec3;
     #[cfg(feature = "u8")]
     use glam::U8Vec3;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec3;
     #[cfg(feature = "u32")]
     use glam::UVec3;
     use glam::{i64vec3, BVec3, I64Vec3};
@@ -2793,16 +2588,12 @@ mod u64vec3 {
     use glam::I64Vec3;
     #[cfg(feature = "i8")]
     use glam::I8Vec3;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec3;
     #[cfg(feature = "i32")]
     use glam::IVec3;
     #[cfg(feature = "u16")]
     use glam::U16Vec3;
     #[cfg(feature = "u8")]
     use glam::U8Vec3;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec3;
     #[cfg(feature = "u32")]
     use glam::UVec3;
     use glam::{u64vec3, BVec3, U64Vec3};
@@ -2827,86 +2618,6 @@ mod u64vec3 {
     impl_vec3_bit_op_tests!(U64Vec3, 0, 2);
 }
 
-#[cfg(all(feature = "isize", not(target_arch = "wasm32")))]
-mod isizevec3 {
-    #[cfg(feature = "i16")]
-    use glam::I16Vec3;
-    #[cfg(feature = "i64")]
-    use glam::I64Vec3;
-    #[cfg(feature = "i8")]
-    use glam::I8Vec3;
-    #[cfg(feature = "i32")]
-    use glam::IVec3;
-    #[cfg(feature = "u16")]
-    use glam::U16Vec3;
-    #[cfg(feature = "u64")]
-    use glam::U64Vec3;
-    #[cfg(feature = "u8")]
-    use glam::U8Vec3;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec3;
-    #[cfg(feature = "u32")]
-    use glam::UVec3;
-    use glam::{isizevec3, BVec3, ISizeVec3};
 
-    glam_test!(test_align, {
-        use std::mem;
-        assert_eq!(24, mem::size_of::<ISizeVec3>());
-        assert_eq!(8, mem::align_of::<ISizeVec3>());
-    });
 
-    impl_vec3_isize_try_from_tests!(ISizeVec3, isize);
 
-    impl_vec_wrapping_saturating_tests!(3, ISizeVec3, isize, USizeVec3, "usize", signed);
-
-    impl_vec3_signed_integer_tests!(isize, isizevec3, ISizeVec3, BVec3);
-    impl_vec3_eq_hash_tests!(isize, isizevec3);
-
-    impl_vec3_scalar_shift_op_tests!(ISizeVec3, -2, 2);
-    impl_vec3_shift_op_tests!(ISizeVec3);
-
-    impl_vec3_scalar_bit_op_tests!(ISizeVec3, -2, 2);
-    impl_vec3_bit_op_tests!(ISizeVec3, -2, 2);
-}
-
-#[cfg(feature = "usize")]
-mod usizevec3 {
-    #[cfg(feature = "i16")]
-    use glam::I16Vec3;
-    #[cfg(feature = "i64")]
-    use glam::I64Vec3;
-    #[cfg(feature = "i8")]
-    use glam::I8Vec3;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec3;
-    #[cfg(feature = "i32")]
-    use glam::IVec3;
-    #[cfg(feature = "u16")]
-    use glam::U16Vec3;
-    #[cfg(feature = "u64")]
-    use glam::U64Vec3;
-    #[cfg(feature = "u8")]
-    use glam::U8Vec3;
-    #[cfg(feature = "u32")]
-    use glam::UVec3;
-    use glam::{usizevec3, BVec3, USizeVec3};
-
-    glam_test!(test_align, {
-        use std::mem;
-        assert_eq!(mem::size_of::<usize>() * 3, mem::size_of::<USizeVec3>());
-        assert_eq!(mem::align_of::<usize>(), mem::align_of::<USizeVec3>());
-    });
-
-    impl_vec3_usize_try_from_tests!(USizeVec3, usize);
-
-    impl_vec_wrapping_saturating_tests!(3, USizeVec3, usize, ISizeVec3, "isize", unsigned);
-
-    impl_vec3_unsigned_integer_tests!(usize, usizevec3, USizeVec3, BVec3);
-    impl_vec3_eq_hash_tests!(usize, usizevec3);
-
-    impl_vec3_scalar_shift_op_tests!(USizeVec3, 0, 2);
-    impl_vec3_shift_op_tests!(USizeVec3);
-
-    impl_vec3_scalar_bit_op_tests!(USizeVec3, 0, 2);
-    impl_vec3_bit_op_tests!(USizeVec3, 0, 2);
-}

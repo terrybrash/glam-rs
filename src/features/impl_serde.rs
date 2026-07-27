@@ -800,15 +800,6 @@ mod test_i64 {
     pub const V4: i64 = 4;
 }
 
-#[cfg(feature = "isize")]
-#[cfg(test)]
-mod test_isize {
-    pub const V1: isize = 1;
-    pub const V2: isize = 2;
-    pub const V3: isize = 3;
-    pub const V4: isize = 4;
-}
-
 #[cfg(feature = "u8")]
 #[cfg(test)]
 mod test_u8 {
@@ -844,15 +835,6 @@ mod test_u64 {
     pub const V2: u64 = 2;
     pub const V3: u64 = 3;
     pub const V4: u64 = 4;
-}
-
-#[cfg(feature = "usize")]
-#[cfg(test)]
-mod test_usize {
-    pub const V1: usize = 1;
-    pub const V2: usize = 2;
-    pub const V3: usize = 3;
-    pub const V4: usize = 4;
 }
 
 #[cfg(test)]
@@ -1156,22 +1138,6 @@ mod i64 {
     impl_serde_vec_types!(i64, I64Vec2, I64Vec3, I64Vec4);
 }
 
-#[cfg(feature = "isize")]
-mod isize {
-    #[cfg(test)]
-    use super::test_int::*;
-    #[cfg(test)]
-    use super::test_isize::*;
-    use crate::{ISizeVec2, ISizeVec3, ISizeVec4};
-    use core::fmt;
-    use serde_core::{
-        de::{self, Deserialize, Deserializer, SeqAccess, Visitor},
-        ser::{Serialize, SerializeTupleStruct, Serializer},
-    };
-
-    impl_serde_vec_types!(isize, ISizeVec2, ISizeVec3, ISizeVec4);
-}
-
 #[cfg(feature = "u8")]
 mod u8 {
     #[cfg(test)]
@@ -1234,22 +1200,6 @@ mod u64 {
     };
 
     impl_serde_vec_types!(u64, U64Vec2, U64Vec3, U64Vec4);
-}
-
-#[cfg(feature = "usize")]
-mod usize {
-    #[cfg(test)]
-    use super::test_int::*;
-    #[cfg(test)]
-    use super::test_usize::*;
-    use crate::{USizeVec2, USizeVec3, USizeVec4};
-    use core::fmt;
-    use serde_core::{
-        de::{self, Deserialize, Deserializer, SeqAccess, Visitor},
-        ser::{Serialize, SerializeTupleStruct, Serializer},
-    };
-
-    impl_serde_vec_types!(usize, USizeVec2, USizeVec3, USizeVec4);
 }
 
 mod euler {
@@ -1471,11 +1421,7 @@ mod euler {
                         b"XYXEx" => Ok(Field::XYXEx),
                         b"XZXEx" => Ok(Field::XZXEx),
                         _ => {
-                            #[cfg(feature = "std")]
                             let value = &String::from_utf8_lossy(value);
-                            #[cfg(not(feature = "std"))]
-                            let value =
-                                core::str::from_utf8(value).unwrap_or("\u{fffd}\u{fffd}\u{fffd}");
                             Err(serde_core::de::Error::unknown_variant(value, VARIANTS))
                         }
                     }

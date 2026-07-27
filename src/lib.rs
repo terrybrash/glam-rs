@@ -33,10 +33,6 @@
   * vectors: [`I64Vec2`], [`I64Vec3`] and [`I64Vec4`]
 * [`u64`](mod@u64) types
   * vectors: [`U64Vec2`], [`U64Vec3`] and [`U64Vec4`]
-* [`isize`](mod@isize) types
-  * vectors: [`ISizeVec2`], [`ISizeVec3`] and [`ISizeVec4`]
-* [`usize`](mod@usize) types
-  * vectors: [`USizeVec2`], [`USizeVec3`] and [`USizeVec4`]
 * [`bool`](mod@bool) types
   * vectors: [`BVec2`], [`BVec3`] and [`BVec4`]
 
@@ -60,7 +56,7 @@ padding so that object sizes and layouts will not change between architectures. 
 math fallback implementations exist when SIMD is not available. It is intended to add support for
 other SIMD architectures once they appear in stable Rust.
 
-Currently only SSE2 on x86/x86_64, NEON on Aarch64, and simd128 on WASM are supported.
+Currently only SSE2 on x86_64 and NEON on Aarch64 are supported.
 
 ## Vec3A and Mat3A
 
@@ -246,26 +242,18 @@ assert_eq!(format!("{}", a), "[1, 2, 3, 4]");
 ```
 ## Feature gates
 
-* `std` - the default feature, has no dependencies.
-* `all-types` - a default feature, enables `float-types`, `integer-types` and `size-types`
+* `all-types` - a default feature, enables `float-types` and `integer-types`
 * `float-types` - enables `f64` types
 * `integer-types` - enables `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32` and `u64` types
-* `size-types` - enables `isize` and `usize` types
-* `f64`, `i8`, `i16`, `i32`, `i64`, `isize`, `u8`, `u16`, `u32`, `u64`, `usize` - enables glam types
-  for the given intrinsic type
-* `nostd-libm` - uses `libm` math functions if `std` is not available
-* `scalar-math` - disables SIMD support and uses native alignment for all types.
+* `f64`, `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64` - enables glam types for the given
+  intrinsic type. Turn off the ones you do not use to build faster.
+* `scalar-math` - builds the scalar reference implementation instead of SSE2 or NEON, and uses
+  native alignment for all types. This is a test reference only, and it is not for shipping. The
+  test in `tests/golden_bits.rs` uses it to tell which SIMD backend is wrong when the two disagree.
 * `debug-glam-assert` - adds assertions in debug builds which check the validity of parameters
   passed to `glam` to help catch runtime errors.
 * `glam-assert` - adds assertions to all builds which check the validity of parameters passed to
   `glam` to help catch runtime errors.
-* `cuda` - forces `glam` types to match expected cuda alignment
-* `fast-math` - By default, glam attempts to provide bit-for-bit identical results on all platforms.
-  Using this feature will enable platform specific optimizations that may not be identical to other
-  platforms. **Intermediate libraries should not use this feature and defer the decision to the
-  final binary build**.
-* `core-simd` - enables SIMD support via the portable simd module. This is an unstable feature which
-  requires a nightly Rust toolchain and `std` support.
 
 ## Optional features
 
@@ -291,16 +279,14 @@ and benchmarks.
 
 ## Minimum Supported Rust Version (MSRV)
 
-The minimum supported Rust version is `1.98.0`.
+The minimum supported Rust version is `1.96.0`.
 
 */
 #![doc(html_root_url = "https://docs.rs/glam/0.33.2")]
-#![cfg_attr(not(feature = "std"), no_std)]
 // `docsrs` is set only by the docs.rs build (see `[package.metadata.docs.rs]`), which runs on
 // nightly. This annotates every feature-gated item with the feature that enables it without
 // requiring nightly for ordinary builds.
 #![cfg_attr(docsrs, feature(doc_cfg))]
-#![cfg_attr(target_arch = "spirv", feature(repr_simd))]
 #![cfg_attr(target_arch = "wasm64", feature(simd_wasm64))]
 #![deny(
     rust_2018_compatibility,
@@ -310,19 +296,7 @@ The minimum supported Rust version is `1.98.0`.
 )]
 // clippy doesn't like `to_array(&self)`
 #![allow(clippy::wrong_self_convention)]
-#![cfg_attr(
-    all(feature = "core-simd", not(feature = "scalar-math")),
-    feature(portable_simd)
-)]
 
-#[cfg(all(
-    not(feature = "std"),
-    not(feature = "libm"),
-    not(feature = "nostd-libm")
-))]
-compile_error!(
-    "You must specify a math backend. Consider enabling either `std`, `libm`, or `nostd-libm`."
-);
 
 #[macro_use]
 mod macros;
@@ -332,34 +306,13 @@ mod deref;
 mod euler;
 mod features;
 
-#[cfg(all(
-    target_arch = "aarch64",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-mod neon;
+#[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+mod aarch64;
 
-#[cfg(target_arch = "spirv")]
-mod spirv;
+#[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+mod x86_64;
 
-#[cfg(all(
-    target_feature = "sse2",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-mod sse2;
-
-#[cfg(all(
-    target_feature = "simd128",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-mod wasm;
-
-#[cfg(all(feature = "core-simd", not(feature = "scalar-math")))]
-mod coresimd;
-
-#[cfg(all(
-    target_feature = "sse2",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
+#[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
 use align16::Align16;
 
 /** `bool` vector mask types. */
@@ -428,18 +381,6 @@ pub use self::i64::*;
 pub mod u64;
 #[cfg(feature = "u64")]
 pub use self::u64::*;
-
-/** `usize` vector types. */
-#[cfg(feature = "usize")]
-pub mod usize;
-#[cfg(feature = "usize")]
-pub use self::usize::*;
-
-/** `isize` vector types. */
-#[cfg(feature = "isize")]
-pub mod isize;
-#[cfg(feature = "isize")]
-pub use self::isize::*;
 
 /** The glam prelude, including all common types but excluding camera modules. */
 pub mod prelude;

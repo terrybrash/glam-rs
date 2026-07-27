@@ -5,26 +5,26 @@ macro_rules! deps {
 }
 
 pub(crate) const FEATURE_SETS: &[&str] = &[
-    concat!("std ", deps!()),
-    concat!("std all-types scalar-math ", deps!()),
-    "std all-types cuda",
-    "std all-types scalar-math cuda",
-    "std all-types libm",
-    "std all-types scalar-math libm",
-    concat!("libm ", deps!()),
-    concat!("libm all-types ", deps!()),
-    concat!("libm all-types scalar-math ", deps!()),
+    // The default build.
+    "all-types",
+    // The scalar reference used by the differential test. Never shipped.
+    "all-types scalar-math",
+    // The integrations, on their own and with every type.
+    deps!(),
+    concat!("all-types ", deps!()),
+    concat!("all-types scalar-math ", deps!()),
+    // Assertions on in a release build.
+    concat!("all-types glam-assert ", deps!()),
+    // A narrow type set, to check that the per-type features still compile.
+    "f64",
+    "i32 u32",
 ];
 
-// MSRV reduced set — some optional deps need a newer rustc
+// A reduced set. Some optional dependencies need a newer rustc.
 pub(crate) const MSRV_FEATURES: &str = "all-types arbitrary approx mint speedy debug-glam-assert";
 
 // All optional deps used by clippy, doc, and coverage
 pub(crate) const ALL_FEATURES: &str = deps!();
-
-// core-simd profile features (no zerocopy as it doesn't compile with core-simd)
-pub(crate) const CORE_SIMD_FEATURES: &str =
-    "core-simd arbitrary approx bytemuck encase mint rand rkyv bytecheck serde speedy debug-glam-assert";
 
 pub fn resolve_sets(index: Option<usize>) -> &'static [&'static str] {
     match index {

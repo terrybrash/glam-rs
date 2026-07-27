@@ -25,12 +25,6 @@ use crate::IVec4;
 #[cfg(feature = "i64")]
 use crate::I64Vec4;
 
-#[cfg(feature = "isize")]
-use crate::ISizeVec4;
-
-#[cfg(feature = "usize")]
-use crate::USizeVec4;
-
 use core::fmt;
 use core::iter::{Product, Sum};
 use core::{f32, ops::*};
@@ -52,9 +46,7 @@ pub const fn u64vec4(x: u64, y: u64, z: u64, w: u64) -> U64Vec4 {
     feature = "zerocopy",
     derive(FromBytes, Immutable, IntoBytes, KnownLayout)
 )]
-#[cfg_attr(feature = "cuda", repr(align(16)))]
 #[repr(C)]
-#[cfg_attr(target_arch = "spirv", rust_gpu::vector::v1)]
 pub struct U64Vec4 {
     pub x: u64,
     pub y: u64,
@@ -220,7 +212,7 @@ impl U64Vec4 {
     #[inline]
     #[must_use]
     pub fn dot(self, rhs: Self) -> u64 {
-        (self.x * rhs.x) + (self.y * rhs.y) + (self.z * rhs.z) + (self.w * rhs.w)
+        ((self.x * rhs.x) + (self.z * rhs.z)) + ((self.y * rhs.y) + (self.w * rhs.w))
     }
 
     /// Returns a vector where every component is the dot product of `self` and `rhs`.
@@ -340,7 +332,7 @@ impl U64Vec4 {
     #[inline]
     #[must_use]
     pub fn element_sum(self) -> u64 {
-        self.x + self.y + self.z + self.w
+        (self.x + self.y) + (self.z + self.w)
     }
 
     /// Returns the product of all elements of `self`.
@@ -574,32 +566,6 @@ impl U64Vec4 {
     #[must_use]
     pub fn as_i64vec4(self) -> crate::I64Vec4 {
         crate::I64Vec4::new(self.x as i64, self.y as i64, self.z as i64, self.w as i64)
-    }
-
-    /// Casts all elements of `self` to `isize`.
-    #[cfg(feature = "isize")]
-    #[inline]
-    #[must_use]
-    pub fn as_isizevec4(self) -> crate::ISizeVec4 {
-        crate::ISizeVec4::new(
-            self.x as isize,
-            self.y as isize,
-            self.z as isize,
-            self.w as isize,
-        )
-    }
-
-    /// Casts all elements of `self` to `usize`.
-    #[cfg(feature = "usize")]
-    #[inline]
-    #[must_use]
-    pub fn as_usizevec4(self) -> crate::USizeVec4 {
-        crate::USizeVec4::new(
-            self.x as usize,
-            self.y as usize,
-            self.z as usize,
-            self.w as usize,
-        )
     }
 
     /// Returns a vector containing the wrapping addition of `self` and `rhs`.
@@ -3159,36 +3125,6 @@ impl TryFrom<I64Vec4> for U64Vec4 {
 
     #[inline]
     fn try_from(v: I64Vec4) -> Result<Self, Self::Error> {
-        Ok(Self::new(
-            u64::try_from(v.x)?,
-            u64::try_from(v.y)?,
-            u64::try_from(v.z)?,
-            u64::try_from(v.w)?,
-        ))
-    }
-}
-
-#[cfg(feature = "isize")]
-impl TryFrom<ISizeVec4> for U64Vec4 {
-    type Error = core::num::TryFromIntError;
-
-    #[inline]
-    fn try_from(v: ISizeVec4) -> Result<Self, Self::Error> {
-        Ok(Self::new(
-            u64::try_from(v.x)?,
-            u64::try_from(v.y)?,
-            u64::try_from(v.z)?,
-            u64::try_from(v.w)?,
-        ))
-    }
-}
-
-#[cfg(feature = "usize")]
-impl TryFrom<USizeVec4> for U64Vec4 {
-    type Error = core::num::TryFromIntError;
-
-    #[inline]
-    fn try_from(v: USizeVec4) -> Result<Self, Self::Error> {
         Ok(Self::new(
             u64::try_from(v.x)?,
             u64::try_from(v.y)?,

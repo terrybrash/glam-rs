@@ -38,11 +38,6 @@ impl Prepare for CoverageLlvm {
         let profiles: &[(&str, &str, &str)] = &[
             ("native_simd", crate::features::ALL_FEATURES, "stable"),
             ("scalar_math", &scalar_features, "stable"),
-            (
-                "core_simd",
-                crate::features::CORE_SIMD_FEATURES,
-                toolchain::NIGHTLY,
-            ),
         ];
 
         for &(name, features, tc) in profiles {

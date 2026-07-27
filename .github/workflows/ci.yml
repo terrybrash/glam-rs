@@ -7,6 +7,12 @@ on:
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+
+# Every job uses the compiler pinned in rust-toolchain.toml. Do not add a
+# toolchain matrix, and do not call `rustup default`. One compiler gives one
+# floating-point operation order on every machine, and that is what makes the
+# results the same. See rewrite.md.
+
 jobs:
   lint:
     name: Lint
@@ -15,91 +21,51 @@ jobs:
       - uses: actions/checkout@v7
         with:
           submodules: true
-
       - uses: Swatinem/rust-cache@v2
-      - run: rustup update --no-self-update stable
-      - run: rustup default stable
       - run: cargo run --release -p ci -- lints
 
-  test:
-    name: Test features
+  # The gate. The same stored bit patterns must hold on x86-64 and on ARM. If a
+  # backend, the compiler, or a dependency changes a result, this job fails.
+  determinism:
+    name: Determinism (${{ matrix.name }})
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        toolchain: [stable, beta, nightly]
+        include:
+          - { name: linux x86-64, os: ubuntu-latest }
+          - { name: windows x86-64, os: windows-latest }
+          - { name: macos x86-64, os: macos-13 }
+          - { name: macos ARM, os: macos-latest }
+          - { name: linux ARM, os: ubuntu-24.04-arm }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
         with:
           submodules: true
       - uses: Swatinem/rust-cache@v2
-      - run: rustup update --no-self-update ${{ matrix.toolchain }}
-      - run: rustup default ${{ matrix.toolchain }}
+      # Fails on any instruction or function that rewrite.md does not permit.
+      - run: cargo test --release --test forbidden
+      # The stored bit patterns, for the shipped backends and for the reference.
+      - run: cargo test --release --test golden_bits
+      - run: cargo test --release --features scalar-math --test golden_bits
+      - run: cargo test --release
+
+  features:
+    name: Test features
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: Swatinem/rust-cache@v2
       - run: cargo run --release -p ci -- test-features
 
-  check-msrv:
-    name: Check MSRV
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-    runs-on: ${{ matrix.os }}
+  # Rejects a dependency that would break determinism. See deny.toml.
+  deny:
+    name: Check dependencies
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
           submodules: true
-      - uses: Swatinem/rust-cache@v2
-      - run: rustup update --no-self-update stable
-      - run: rustup default stable
-      - run: rustup toolchain install 1.98.0
-      - run: cargo run --release -p ci -- msrv
-
-  test-core-simd:
-    name: Test portable simd
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        toolchain: [nightly]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          submodules: true
-      - uses: Swatinem/rust-cache@v2
-      - run: rustup update --no-self-update ${{ matrix.toolchain }}
-      - run: rustup default ${{ matrix.toolchain }}
-      - run: cargo run --release -p ci -- core-simd
-
-  test-wasm32:
-    name: Test wasm32
-    strategy:
-      matrix:
-        toolchain: [stable]
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          submodules: true
-
-      - uses: Swatinem/rust-cache@v2
-
-      - name: Install wasm-pack
-        uses: jetli/wasm-pack-action@v0.4.0
-
-      - run: cargo run --release -p ci -- wasm32
-
-  test-wasm64:
-    name: Test wasm64
-    strategy:
-      matrix:
-        toolchain: [nightly]
-        os: [ubuntu-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          submodules: true
-      - uses: Swatinem/rust-cache@v2
-      - run: rustup component add rust-src --toolchain ${{ matrix.toolchain }}
-      - uses: bytecodealliance/actions/wasmtime/setup@v1
-      - run: cargo run --release -p ci -- wasm64
+      - uses: EmbarkStudios/cargo-deny-action@v2

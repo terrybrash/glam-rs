@@ -697,23 +697,10 @@ impl Mat3 {
     #[inline]
     #[must_use]
     pub fn mul_vec3(&self, rhs: Vec3) -> Vec3 {
-        #[cfg(feature = "fast-math")]
-        {
-            // Fused. On the scalar backends this lowers to an FMA where the target has
-            // one and a plain multiply and add where it does not, and lets the compiler
-            // reassociate, so it is gated behind `fast-math`.
-            let a = self
-                .x_axis
-                .mul_add_fast(Vec3::splat(rhs.x), self.y_axis.mul(rhs.y));
-            self.z_axis.mul_add_fast(Vec3::splat(rhs.z), a)
-        }
-        #[cfg(not(feature = "fast-math"))]
-        {
-            let mut res = self.x_axis.mul(rhs.x);
-            res = res.add(self.y_axis.mul(rhs.y));
-            res = res.add(self.z_axis.mul(rhs.z));
-            res
-        }
+        let mut res = self.x_axis.mul(rhs.x);
+        res = self.y_axis.mul_add(Vec3::splat(rhs.y), res);
+        res = self.z_axis.mul_add(Vec3::splat(rhs.z), res);
+        res
     }
 
     /// Transforms a [`Vec3A`].

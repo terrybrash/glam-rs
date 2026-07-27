@@ -2,34 +2,14 @@ mod bvec2;
 mod bvec3;
 mod bvec4;
 
-#[cfg(all(feature = "core-simd", not(feature = "scalar-math")))]
-mod coresimd;
+#[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+mod aarch64;
 
-#[cfg(all(
-    target_arch = "aarch64",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-mod neon;
-
-#[cfg(all(
-    target_feature = "sse2",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-mod sse2;
-
-#[cfg(all(
-    target_feature = "simd128",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-mod wasm;
+#[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+mod x86_64;
 
 #[cfg(any(
-    not(any(
-        feature = "core-simd",
-        target_arch = "aarch64",
-        target_feature = "sse2",
-        target_feature = "simd128"
-    )),
+    not(any(target_arch = "aarch64", target_arch = "x86_64")),
     feature = "scalar-math"
 ))]
 mod scalar;
@@ -38,62 +18,24 @@ pub use bvec2::{bvec2, BVec2};
 pub use bvec3::{bvec3, BVec3};
 pub use bvec4::{bvec4, BVec4};
 
-#[cfg(all(
-    target_arch = "aarch64",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-pub use neon::bvec3a::{bvec3a, BVec3A};
-#[cfg(all(
-    target_arch = "aarch64",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-pub use neon::bvec4a::{bvec4a, BVec4A};
+#[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+pub use aarch64::bvec3a::{bvec3a, BVec3A};
+#[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+pub use aarch64::bvec4a::{bvec4a, BVec4A};
 
-#[cfg(all(
-    target_feature = "sse2",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-pub use sse2::bvec3a::{bvec3a, BVec3A};
-#[cfg(all(
-    target_feature = "sse2",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-pub use sse2::bvec4a::{bvec4a, BVec4A};
-
-#[cfg(all(
-    target_feature = "simd128",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-pub use wasm::bvec3a::{bvec3a, BVec3A};
-#[cfg(all(
-    target_feature = "simd128",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-pub use wasm::bvec4a::{bvec4a, BVec4A};
-
-#[cfg(all(feature = "core-simd", not(feature = "scalar-math")))]
-pub use coresimd::bvec3a::{bvec3a, BVec3A};
-#[cfg(all(feature = "core-simd", not(feature = "scalar-math")))]
-pub use coresimd::bvec4a::{bvec4a, BVec4A};
+#[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+pub use x86_64::bvec3a::{bvec3a, BVec3A};
+#[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+pub use x86_64::bvec4a::{bvec4a, BVec4A};
 
 #[cfg(any(
-    not(any(
-        feature = "core-simd",
-        target_arch = "aarch64",
-        target_feature = "sse2",
-        target_feature = "simd128"
-    )),
+    not(any(target_arch = "aarch64", target_arch = "x86_64")),
     feature = "scalar-math"
 ))]
 pub use scalar::bvec3a::{bvec3a, BVec3A};
 
 #[cfg(any(
-    not(any(
-        feature = "core-simd",
-        target_arch = "aarch64",
-        target_feature = "sse2",
-        target_feature = "simd128"
-    )),
+    not(any(target_arch = "aarch64", target_arch = "x86_64")),
     feature = "scalar-math"
 ))]
 pub use scalar::bvec4a::{bvec4a, BVec4A};

@@ -41,7 +41,6 @@ pub const fn dmat4(x_axis: DVec4, y_axis: DVec4, z_axis: DVec4, w_axis: DVec4) -
     feature = "zerocopy",
     derive(FromBytes, Immutable, IntoBytes, KnownLayout)
 )]
-#[cfg_attr(feature = "cuda", repr(align(16)))]
 #[repr(C)]
 pub struct DMat4 {
     pub x_axis: DVec4,
@@ -1255,27 +1254,12 @@ impl DMat4 {
     #[inline]
     #[must_use]
     pub fn project_point3(&self, rhs: DVec3) -> DVec3 {
-        #[cfg(feature = "fast-math")]
-        {
-            // Reassociated into a balanced tree and fused: fewer instructions and a
-            // shorter dependency chain. This reorders the sum and skips the
-            // intermediate rounding, so it is gated behind `fast-math`.
-            let a = self
-                .x_axis
-                .mul_add_fast(DVec4::splat(rhs.x), self.y_axis.mul(rhs.y));
-            let b = self.z_axis.mul_add_fast(DVec4::splat(rhs.z), self.w_axis);
-            let res = a.add(b);
-            res.div(res.w).xyz()
-        }
-        #[cfg(not(feature = "fast-math"))]
-        {
-            let mut res = self.x_axis.mul(rhs.x);
-            res = self.y_axis.mul(rhs.y).add(res);
-            res = self.z_axis.mul(rhs.z).add(res);
-            res = self.w_axis.add(res);
-            res = res.div(res.w);
-            res.xyz()
-        }
+        let mut res = self.x_axis.mul(rhs.x);
+        res = self.y_axis.mul_add(DVec4::splat(rhs.y), res);
+        res = self.z_axis.mul_add(DVec4::splat(rhs.z), res);
+        res = self.w_axis.add(res);
+        res = res.div(res.w);
+        res.xyz()
     }
 
     /// Transforms the given 3D vector as a point.
@@ -1294,25 +1278,12 @@ impl DMat4 {
     #[must_use]
     pub fn transform_point3(&self, rhs: DVec3) -> DVec3 {
         glam_assert!(self.row(3).abs_diff_eq(DVec4::W, 1e-6));
-        #[cfg(feature = "fast-math")]
-        {
-            // Reassociated into a balanced tree and fused: fewer instructions and a
-            // shorter dependency chain. This reorders the sum and skips the
-            // intermediate rounding, so it is gated behind `fast-math`.
-            let a = self
-                .x_axis
-                .mul_add_fast(DVec4::splat(rhs.x), self.y_axis.mul(rhs.y));
-            let b = self.z_axis.mul_add_fast(DVec4::splat(rhs.z), self.w_axis);
-            a.add(b).xyz()
-        }
-        #[cfg(not(feature = "fast-math"))]
-        {
-            let mut res = self.x_axis.mul(rhs.x);
-            res = self.y_axis.mul(rhs.y).add(res);
-            res = self.z_axis.mul(rhs.z).add(res);
-            res = self.w_axis.add(res);
-            res.xyz()
-        }
+
+        let mut res = self.x_axis.mul(rhs.x);
+        res = self.y_axis.mul_add(DVec4::splat(rhs.y), res);
+        res = self.z_axis.mul_add(DVec4::splat(rhs.z), res);
+        res = self.w_axis.add(res);
+        res.xyz()
     }
 
     /// Transforms the given 3D vector as a direction.
@@ -1329,49 +1300,22 @@ impl DMat4 {
     #[must_use]
     pub fn transform_vector3(&self, rhs: DVec3) -> DVec3 {
         glam_assert!(self.row(3).abs_diff_eq(DVec4::W, 1e-6));
-        #[cfg(feature = "fast-math")]
-        {
-            // Reassociated into a balanced tree and fused: fewer instructions and a
-            // shorter dependency chain. This reorders the sum and skips the
-            // intermediate rounding, so it is gated behind `fast-math`.
-            let a = self
-                .x_axis
-                .mul_add_fast(DVec4::splat(rhs.x), self.y_axis.mul(rhs.y));
-            self.z_axis.mul_add_fast(DVec4::splat(rhs.z), a).xyz()
-        }
-        #[cfg(not(feature = "fast-math"))]
-        {
-            let mut res = self.x_axis.mul(rhs.x);
-            res = self.y_axis.mul(rhs.y).add(res);
-            res = self.z_axis.mul(rhs.z).add(res);
-            res.xyz()
-        }
+
+        let mut res = self.x_axis.mul(rhs.x);
+        res = self.y_axis.mul_add(DVec4::splat(rhs.y), res);
+        res = self.z_axis.mul_add(DVec4::splat(rhs.z), res);
+        res.xyz()
     }
 
     /// Transforms a 4D vector.
     #[inline]
     #[must_use]
     pub fn mul_vec4(&self, rhs: DVec4) -> DVec4 {
-        #[cfg(feature = "fast-math")]
-        {
-            // Reassociated into a balanced tree and fused. See the comment on the
-            // SIMD path below; gated behind `fast-math` for the same reason.
-            let a = self
-                .x_axis
-                .mul_add_fast(DVec4::splat(rhs.x), self.y_axis.mul(rhs.y));
-            let b = self
-                .z_axis
-                .mul_add_fast(DVec4::splat(rhs.z), self.w_axis.mul(rhs.w));
-            a.add(b)
-        }
-        #[cfg(not(feature = "fast-math"))]
-        {
-            let mut res = self.x_axis.mul(rhs.x);
-            res = res.add(self.y_axis.mul(rhs.y));
-            res = res.add(self.z_axis.mul(rhs.z));
-            res = res.add(self.w_axis.mul(rhs.w));
-            res
-        }
+        let mut res = self.x_axis.mul(rhs.x);
+        res = self.y_axis.mul_add(DVec4::splat(rhs.y), res);
+        res = self.z_axis.mul_add(DVec4::splat(rhs.z), res);
+        res = self.w_axis.mul_add(DVec4::splat(rhs.w), res);
+        res
     }
 
     /// Transforms a 4D vector by the transpose of `self`.

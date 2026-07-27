@@ -30,7 +30,6 @@ pub const fn vec3a(x: f32, y: f32, z: f32) -> Vec3A {
 #[cfg_attr(feature = "zerocopy", derive(FromBytes, Immutable, KnownLayout))]
 #[repr(align(16))]
 #[repr(C)]
-#[cfg_attr(target_arch = "spirv", rust_gpu::vector::v1)]
 pub struct Vec3A {
     pub x: f32,
     pub y: f32,
@@ -83,18 +82,12 @@ impl Vec3A {
     /// The unit axes.
     pub const AXES: [Self; 3] = [Self::X, Self::Y, Self::Z];
 
-    /// Vec3A uses Rust Portable SIMD
-    pub const USES_CORE_SIMD: bool = false;
     /// Vec3A uses Arm NEON
-    pub const USES_NEON: bool = false;
+    pub const USES_AARCH64: bool = false;
     /// Vec3A uses scalar math
     pub const USES_SCALAR_MATH: bool = true;
     /// Vec3A uses Intel SSE2
-    pub const USES_SSE2: bool = false;
-    /// Vec3A uses WebAssembly 128-bit SIMD
-    pub const USES_WASM_SIMD: bool = false;
-    #[deprecated(since = "0.31.0", note = "Renamed to USES_WASM_SIMD")]
-    pub const USES_WASM32_SIMD: bool = false;
+    pub const USES_X86_64: bool = false;
 
     /// Creates a new vector.
     #[inline(always)]
@@ -280,8 +273,8 @@ impl Vec3A {
     ///
     /// In other words this computes `[min(x, rhs.x), min(self.y, rhs.y), ..]`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics for minNum and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics for minNum. The
+    /// rule is `a < b ? a : b`, and it is the same on every backend.
     #[inline]
     #[must_use]
     pub fn min(self, rhs: Self) -> Self {
@@ -296,8 +289,8 @@ impl Vec3A {
     ///
     /// In other words this computes `[max(self.x, rhs.x), max(self.y, rhs.y), ..]`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics for maxNum and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics for maxNum. The
+    /// rule is `a > b ? a : b`, and it is the same on every backend.
     #[inline]
     #[must_use]
     pub fn max(self, rhs: Self) -> Self {
@@ -312,8 +305,8 @@ impl Vec3A {
     ///
     /// Each element in `min` must be less-or-equal to the corresponding element in `max`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics, but it is the
+    /// same on every backend.
     ///
     /// # Panics
     ///
@@ -329,8 +322,8 @@ impl Vec3A {
     ///
     /// In other words this computes `min(x, y, ..)`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics, but it is the
+    /// same on every backend.
     #[inline]
     #[must_use]
     pub fn min_element(self) -> f32 {
@@ -342,8 +335,8 @@ impl Vec3A {
     ///
     /// In other words this computes `max(x, y, ..)`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics, but it is the
+    /// same on every backend.
     #[inline]
     #[must_use]
     pub fn max_element(self) -> f32 {
@@ -652,7 +645,7 @@ impl Vec3A {
     #[must_use]
     pub fn normalize(self) -> Self {
         #[allow(clippy::let_and_return)]
-        let normalized = self.mul(self.length_recip());
+        let normalized = self.div(Self::splat(self.length()));
         glam_assert!(normalized.is_finite());
         normalized
     }
@@ -1091,23 +1084,6 @@ impl Vec3A {
         )
     }
 
-    /// Multiply-add used by `glam`'s internal `fast-math` kernels.
-    ///
-    /// Unlike [`Self::mul_add`] this never falls back to a scalar `libm` call. Where the
-    /// target has no FMA instruction it performs an unfused `self * a + b` instead, which is
-    /// what the kernel would have done anyway. [`Self::mul_add`] cannot do that because it
-    /// promises a single rounding.
-    #[cfg(feature = "fast-math")]
-    #[inline(always)]
-    #[must_use]
-    pub(crate) fn mul_add_fast(self, a: Self, b: Self) -> Self {
-        Self::new(
-            math::mul_add_fast(self.x, a.x, b.x),
-            math::mul_add_fast(self.y, a.y, b.y),
-            math::mul_add_fast(self.z, a.z, b.z),
-        )
-    }
-
     /// Returns the reflection vector for a given incident vector `self` and surface normal
     /// `normal`.
     ///
@@ -1427,22 +1403,6 @@ impl Vec3A {
     #[must_use]
     pub fn as_u64vec3(self) -> crate::U64Vec3 {
         crate::U64Vec3::new(self.x as u64, self.y as u64, self.z as u64)
-    }
-
-    /// Casts all elements of `self` to `isize`.
-    #[cfg(feature = "isize")]
-    #[inline]
-    #[must_use]
-    pub fn as_isizevec3(self) -> crate::ISizeVec3 {
-        crate::ISizeVec3::new(self.x as isize, self.y as isize, self.z as isize)
-    }
-
-    /// Casts all elements of `self` to `usize`.
-    #[cfg(feature = "usize")]
-    #[inline]
-    #[must_use]
-    pub fn as_usizevec3(self) -> crate::USizeVec3 {
-        crate::USizeVec3::new(self.x as usize, self.y as usize, self.z as usize)
     }
 }
 

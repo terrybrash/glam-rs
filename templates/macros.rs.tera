@@ -7,11 +7,7 @@
 {% endcomponent %}
 
 {% component cfg_check_for_type(ty) %}
-    {%- if ty is starting_with(pat="ISizeVec") %}
-        #[cfg(feature = "isize")]
-    {%- elif ty is starting_with(pat="USizeVec") %}
-        #[cfg(feature = "usize")]
-    {%- elif ty is starting_with(pat="I64Vec") %}
+    {%- if ty is starting_with(pat="I64Vec") %}
         #[cfg(feature = "i64")]
     {%- elif ty is starting_with(pat="U64Vec") %}
         #[cfg(feature = "u64")]

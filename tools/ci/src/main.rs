@@ -12,7 +12,6 @@ use commands::check_features::CheckFeatures;
 use commands::ci::Ci;
 use commands::clippy::Clippy;
 use commands::codegen::Codegen;
-use commands::core_simd::CoreSimd;
 use commands::coverage_llvm::CoverageLlvm;
 use commands::coverage_tarpaulin::CoverageTarpaulin;
 use commands::doc::Doc;
@@ -21,11 +20,6 @@ use commands::lints::Lints;
 use commands::msrv::Msrv;
 use commands::pre_push::PrePush;
 use commands::test_features::TestFeatures;
-use commands::wasm32::Wasm32;
-use commands::wasm32_chrome::Wasm32Chrome;
-use commands::wasm32_firefox::Wasm32Firefox;
-use commands::wasm32_node::Wasm32Node;
-use commands::wasm64::Wasm64;
 use prepare::{Prepare, PreparedCommand};
 
 #[derive(FromArgs)]
@@ -45,7 +39,6 @@ enum Subcommand {
     Ci(Ci),
     Clippy(Clippy),
     Codegen(Codegen),
-    CoreSimd(CoreSimd),
     CoverageLlvm(CoverageLlvm),
     CoverageTarpaulin(CoverageTarpaulin),
     Doc(Doc),
@@ -54,11 +47,6 @@ enum Subcommand {
     Msrv(Msrv),
     PrePush(PrePush),
     TestFeatures(TestFeatures),
-    Wasm32(Wasm32),
-    Wasm32Chrome(Wasm32Chrome),
-    Wasm32Firefox(Wasm32Firefox),
-    Wasm32Node(Wasm32Node),
-    Wasm64(Wasm64),
 }
 
 impl Prepare for Subcommand {
@@ -68,7 +56,6 @@ impl Prepare for Subcommand {
             Subcommand::Ci(cmd) => cmd.prepare(sh, args),
             Subcommand::Clippy(cmd) => cmd.prepare(sh, args),
             Subcommand::Codegen(cmd) => cmd.prepare(sh, args),
-            Subcommand::CoreSimd(cmd) => cmd.prepare(sh, args),
             Subcommand::CoverageLlvm(cmd) => cmd.prepare(sh, args),
             Subcommand::CoverageTarpaulin(cmd) => cmd.prepare(sh, args),
             Subcommand::Doc(cmd) => cmd.prepare(sh, args),
@@ -77,11 +64,6 @@ impl Prepare for Subcommand {
             Subcommand::Msrv(cmd) => cmd.prepare(sh, args),
             Subcommand::PrePush(cmd) => cmd.prepare(sh, args),
             Subcommand::TestFeatures(cmd) => cmd.prepare(sh, args),
-            Subcommand::Wasm32(cmd) => cmd.prepare(sh, args),
-            Subcommand::Wasm32Chrome(cmd) => cmd.prepare(sh, args),
-            Subcommand::Wasm32Firefox(cmd) => cmd.prepare(sh, args),
-            Subcommand::Wasm32Node(cmd) => cmd.prepare(sh, args),
-            Subcommand::Wasm64(cmd) => cmd.prepare(sh, args),
         }
     }
 }

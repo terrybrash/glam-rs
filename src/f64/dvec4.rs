@@ -33,9 +33,7 @@ pub const fn dvec4(x: f64, y: f64, z: f64, w: f64) -> DVec4 {
     feature = "zerocopy",
     derive(FromBytes, Immutable, IntoBytes, KnownLayout)
 )]
-#[cfg_attr(feature = "cuda", repr(align(16)))]
 #[repr(C)]
-#[cfg_attr(target_arch = "spirv", rust_gpu::vector::v1)]
 pub struct DVec4 {
     pub x: f64,
     pub y: f64,
@@ -95,18 +93,12 @@ impl DVec4 {
     /// The unit axes.
     pub const AXES: [Self; 4] = [Self::X, Self::Y, Self::Z, Self::W];
 
-    /// DVec4 uses Rust Portable SIMD
-    pub const USES_CORE_SIMD: bool = false;
     /// DVec4 uses Arm NEON
-    pub const USES_NEON: bool = false;
+    pub const USES_AARCH64: bool = false;
     /// DVec4 uses scalar math
     pub const USES_SCALAR_MATH: bool = true;
     /// DVec4 uses Intel SSE2
-    pub const USES_SSE2: bool = false;
-    /// DVec4 uses WebAssembly 128-bit SIMD
-    pub const USES_WASM_SIMD: bool = false;
-    #[deprecated(since = "0.31.0", note = "Renamed to USES_WASM_SIMD")]
-    pub const USES_WASM32_SIMD: bool = false;
+    pub const USES_X86_64: bool = false;
 
     /// Creates a new vector.
     #[inline(always)]
@@ -249,7 +241,7 @@ impl DVec4 {
     #[inline]
     #[must_use]
     pub fn dot(self, rhs: Self) -> f64 {
-        (self.x * rhs.x) + (self.y * rhs.y) + (self.z * rhs.z) + (self.w * rhs.w)
+        ((self.x * rhs.x) + (self.z * rhs.z)) + ((self.y * rhs.y) + (self.w * rhs.w))
     }
 
     /// Returns a vector where every component is the dot product of `self` and `rhs`.
@@ -263,8 +255,8 @@ impl DVec4 {
     ///
     /// In other words this computes `[min(x, rhs.x), min(self.y, rhs.y), ..]`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics for minNum and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics for minNum. The
+    /// rule is `a < b ? a : b`, and it is the same on every backend.
     #[inline]
     #[must_use]
     pub fn min(self, rhs: Self) -> Self {
@@ -280,8 +272,8 @@ impl DVec4 {
     ///
     /// In other words this computes `[max(self.x, rhs.x), max(self.y, rhs.y), ..]`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics for maxNum and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics for maxNum. The
+    /// rule is `a > b ? a : b`, and it is the same on every backend.
     #[inline]
     #[must_use]
     pub fn max(self, rhs: Self) -> Self {
@@ -297,8 +289,8 @@ impl DVec4 {
     ///
     /// Each element in `min` must be less-or-equal to the corresponding element in `max`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics, but it is the
+    /// same on every backend.
     ///
     /// # Panics
     ///
@@ -314,8 +306,8 @@ impl DVec4 {
     ///
     /// In other words this computes `min(x, y, ..)`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics, but it is the
+    /// same on every backend.
     #[inline]
     #[must_use]
     pub fn min_element(self) -> f64 {
@@ -327,8 +319,8 @@ impl DVec4 {
     ///
     /// In other words this computes `max(x, y, ..)`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics, but it is the
+    /// same on every backend.
     #[inline]
     #[must_use]
     pub fn max_element(self) -> f64 {
@@ -384,7 +376,7 @@ impl DVec4 {
     #[inline]
     #[must_use]
     pub fn element_sum(self) -> f64 {
-        self.x + self.y + self.z + self.w
+        (self.x + self.y) + (self.z + self.w)
     }
 
     /// Returns the product of all elements of `self`.
@@ -692,7 +684,7 @@ impl DVec4 {
     #[must_use]
     pub fn normalize(self) -> Self {
         #[allow(clippy::let_and_return)]
-        let normalized = self.mul(self.length_recip());
+        let normalized = self.div(Self::splat(self.length()));
         glam_assert!(normalized.is_finite());
         normalized
     }
@@ -1174,24 +1166,6 @@ impl DVec4 {
         )
     }
 
-    /// Multiply-add used by `glam`'s internal `fast-math` kernels.
-    ///
-    /// Unlike [`Self::mul_add`] this never falls back to a scalar `libm` call. Where the
-    /// target has no FMA instruction it performs an unfused `self * a + b` instead, which is
-    /// what the kernel would have done anyway. [`Self::mul_add`] cannot do that because it
-    /// promises a single rounding.
-    #[cfg(feature = "fast-math")]
-    #[inline(always)]
-    #[must_use]
-    pub(crate) fn mul_add_fast(self, a: Self, b: Self) -> Self {
-        Self::new(
-            math::mul_add_fast(self.x, a.x, b.x),
-            math::mul_add_fast(self.y, a.y, b.y),
-            math::mul_add_fast(self.z, a.z, b.z),
-            math::mul_add_fast(self.w, a.w, b.w),
-        )
-    }
-
     /// Returns the reflection vector for a given incident vector `self` and surface normal
     /// `normal`.
     ///
@@ -1299,32 +1273,6 @@ impl DVec4 {
     #[must_use]
     pub fn as_u64vec4(self) -> crate::U64Vec4 {
         crate::U64Vec4::new(self.x as u64, self.y as u64, self.z as u64, self.w as u64)
-    }
-
-    /// Casts all elements of `self` to `isize`.
-    #[cfg(feature = "isize")]
-    #[inline]
-    #[must_use]
-    pub fn as_isizevec4(self) -> crate::ISizeVec4 {
-        crate::ISizeVec4::new(
-            self.x as isize,
-            self.y as isize,
-            self.z as isize,
-            self.w as isize,
-        )
-    }
-
-    /// Casts all elements of `self` to `usize`.
-    #[cfg(feature = "usize")]
-    #[inline]
-    #[must_use]
-    pub fn as_usizevec4(self) -> crate::USizeVec4 {
-        crate::USizeVec4::new(
-            self.x as usize,
-            self.y as usize,
-            self.z as usize,
-            self.w as usize,
-        )
     }
 }
 

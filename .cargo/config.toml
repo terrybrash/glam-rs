@@ -1,0 +1,22 @@
+# Determinism build configuration.
+#
+# Every machine must compile this crate into instructions that behave the same
+# way. These flags are fixed. Do not change them for one machine only, and do
+# not use `target-cpu=native`.
+#
+# x86-64-v3 contains SSE2 to AVX2, FMA, F16C, BMI1, BMI2, LZCNT, and POPCNT.
+# The FMA and SSE4.1 round instructions come from this level.
+#
+# `generic` on ARM is the ARMv8-A baseline. It contains NEON, IEEE-754
+# floating point, FMLA, and the FRINT round instructions. It is the only
+# setting that is valid and the same on every ARM machine, so a developer
+# machine and a CI runner get the same instruction set. If you raise it, raise
+# it for every ARM machine at the same time.
+#
+# See rewrite.md for the complete rules.
+
+[target.'cfg(target_arch = "x86_64")']
+rustflags = ["-C", "target-cpu=x86-64-v3"]
+
+[target.'cfg(target_arch = "aarch64")']
+rustflags = ["-C", "target-cpu=generic"]

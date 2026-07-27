@@ -54,20 +54,6 @@ mod u64vec3_impl;
 #[cfg(feature = "u64")]
 mod u64vec4_impl;
 
-#[cfg(feature = "isize")]
-mod isizevec2_impl;
-#[cfg(feature = "isize")]
-mod isizevec3_impl;
-#[cfg(feature = "isize")]
-mod isizevec4_impl;
-
-#[cfg(feature = "usize")]
-mod usizevec2_impl;
-#[cfg(feature = "usize")]
-mod usizevec3_impl;
-#[cfg(feature = "usize")]
-mod usizevec4_impl;
-
 #[cfg(feature = "u32")]
 mod uvec2_impl;
 #[cfg(feature = "u32")]
@@ -79,36 +65,16 @@ mod vec2_impl;
 mod vec3_impl;
 
 #[cfg(any(
-    not(any(
-        feature = "core-simd",
-        target_arch = "aarch64",
-        target_feature = "sse2",
-        target_feature = "simd128"
-    )),
+    not(any(target_arch = "aarch64", target_arch = "x86_64")),
     feature = "scalar-math"
 ))]
 mod scalar;
 
-#[cfg(all(
-    target_arch = "aarch64",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-mod neon;
+#[cfg(all(target_arch = "aarch64", not(feature = "scalar-math")))]
+mod aarch64;
 
-#[cfg(all(
-    target_feature = "sse2",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-mod sse2;
-
-#[cfg(all(
-    target_feature = "simd128",
-    not(any(feature = "core-simd", feature = "scalar-math"))
-))]
-mod wasm;
-
-#[cfg(all(feature = "core-simd", not(feature = "scalar-math")))]
-mod coresimd;
+#[cfg(all(target_arch = "x86_64", not(feature = "scalar-math")))]
+mod x86_64;
 
 mod vec_traits;
 pub use vec_traits::*;

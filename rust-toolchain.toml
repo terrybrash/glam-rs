@@ -1,0 +1,16 @@
+# Determinism: one compiler version for every machine.
+#
+# Each machine gets the same compiler and the same LLVM, so the same source
+# produces the same floating-point operation order everywhere. This satisfies
+# the "one rustc version" rule in rewrite.md.
+#
+# This is a stable release, not a nightly. The crate needed nightly only for
+# `float_algebraic`, which the removed `fast-math` feature used.
+#
+# Raise this pin deliberately, never automatically, and run the bit-pattern
+# tests on x86-64 and on ARM before you keep the new version.
+
+[toolchain]
+channel = "1.96.0"
+components = ["rustfmt", "clippy"]
+profile = "minimal"

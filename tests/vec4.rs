@@ -1492,128 +1492,36 @@ macro_rules! impl_vec4_float_tests {
         });
 
         glam_test!(test_min_max_nan, {
-            // NaN propogation is not consistent between scalar and different simd architectures.
-            // The purpose of this test is to document the different behaviour.
-            if $vec4::USES_SCALAR_MATH {
-                assert!(!$vec4::NAN.min($vec4::ZERO).is_nan_mask().all());
-                assert!($vec4::ZERO.min($vec4::NAN).is_nan_mask().all());
-                assert!($vec4::NAN.min($vec4::NAN).is_nan_mask().all());
-                assert!(!$vec4::NAN.max($vec4::ZERO).is_nan_mask().all());
-                assert!($vec4::ZERO.max($vec4::NAN).is_nan_mask().all());
-                assert!($vec4::NAN.max($vec4::NAN).is_nan_mask().all());
-            } else if $vec4::USES_NEON {
-                assert!($vec4::NAN.min($vec4::ZERO).is_nan_mask().all());
-                assert!($vec4::ZERO.min($vec4::NAN).is_nan_mask().all());
-                assert!($vec4::NAN.min($vec4::NAN).is_nan_mask().all());
-                assert!($vec4::NAN.max($vec4::ZERO).is_nan_mask().all());
-                assert!($vec4::ZERO.max($vec4::NAN).is_nan_mask().all());
-                assert!($vec4::NAN.max($vec4::NAN).is_nan_mask().all());
-            } else if $vec4::USES_SSE2 {
-                assert!(!$vec4::NAN.min($vec4::ZERO).is_nan_mask().all());
-                assert!($vec4::ZERO.min($vec4::NAN).is_nan_mask().all());
-                assert!($vec4::NAN.min($vec4::NAN).is_nan_mask().all());
-                assert!(!$vec4::NAN.max($vec4::ZERO).is_nan_mask().all());
-                assert!($vec4::ZERO.max($vec4::NAN).is_nan_mask().all());
-                assert!($vec4::NAN.max($vec4::NAN).is_nan_mask().all());
-            } else if $vec4::USES_WASM_SIMD {
-                assert!($vec4::NAN.min($vec4::ZERO).is_nan_mask().all());
-                assert!(!$vec4::ZERO.min($vec4::NAN).is_nan_mask().all());
-                assert!($vec4::NAN.min($vec4::NAN).is_nan_mask().all());
-                assert!($vec4::NAN.max($vec4::ZERO).is_nan_mask().all());
-                assert!(!$vec4::ZERO.max($vec4::NAN).is_nan_mask().all());
-                assert!($vec4::NAN.max($vec4::NAN).is_nan_mask().all());
-            } else if $vec4::USES_CORE_SIMD {
-                assert!(!$vec4::NAN.min($vec4::ZERO).is_nan_mask().all());
-                assert!($vec4::ZERO.min($vec4::NAN).is_nan_mask().all());
-                assert!($vec4::NAN.min($vec4::NAN).is_nan_mask().all());
-                assert!(!$vec4::NAN.max($vec4::ZERO).is_nan_mask().all());
-                assert!($vec4::ZERO.max($vec4::NAN).is_nan_mask().all());
-                assert!($vec4::NAN.max($vec4::NAN).is_nan_mask().all());
-            }
+            // Every backend uses the same rule. See rewrite.md.
+            assert!(!$vec4::NAN.min($vec4::ZERO).is_nan_mask().all());
+            assert!($vec4::ZERO.min($vec4::NAN).is_nan_mask().all());
+            assert!($vec4::NAN.min($vec4::NAN).is_nan_mask().all());
+            assert!(!$vec4::NAN.max($vec4::ZERO).is_nan_mask().all());
+            assert!($vec4::ZERO.max($vec4::NAN).is_nan_mask().all());
+            assert!($vec4::NAN.max($vec4::NAN).is_nan_mask().all());
+            
         });
 
         glam_test!(test_min_max_element_nan, {
-            // NaN propogation is not consistent between scalar and different simd architectures.
-            // The purpose of this test is to document the different behaviour.
+            // Every backend uses the same rule. See rewrite.md.
             let v = $vec4::new(4.0, 3.0, 2.0, $t::NAN);
-            if $vec4::USES_SCALAR_MATH {
-                assert!(v.min_element().is_nan());
-                assert!(v.max_element().is_nan());
-            } else if $vec4::USES_NEON {
-                assert_eq!(2.0, v.min_element());
-                assert_eq!(4.0, v.max_element());
-            } else if $vec4::USES_SSE2 {
-                assert!(v.min_element().is_nan());
-                assert!(v.max_element().is_nan());
-            } else if $vec4::USES_WASM_SIMD {
-                assert_eq!(2.0, v.min_element());
-                assert_eq!(4.0, v.max_element());
-            } else if $vec4::USES_CORE_SIMD {
-                assert!(v.min_element().is_nan());
-                assert!(v.max_element().is_nan());
-            }
+            assert!(v.min_element().is_nan());
+            assert!(v.max_element().is_nan());
+            
         });
 
         glam_test!(test_clamp_nan, {
-            // NaN propogation is not consistent between scalar and different simd architectures.
-            // The purpose of this test is to document the different behaviour.
-            if $vec4::USES_SCALAR_MATH {
-                assert_eq!($vec4::NEG_ONE, $vec4::NAN.clamp($vec4::NEG_ONE, $vec4::ONE));
-                #[cfg(not(any(feature = "debug-glam-assert", feature = "glam-assert")))]
-                {
-                    assert_eq!($vec4::ONE, $vec4::NAN.clamp($vec4::NAN, $vec4::ONE));
-                    assert!($vec4::NAN
-                        .clamp($vec4::NEG_ONE, $vec4::NAN)
-                        .is_nan_mask()
-                        .all());
-                }
-            } else if $vec4::USES_NEON {
+            // Every backend uses the same rule. See rewrite.md.
+            assert_eq!($vec4::NEG_ONE, $vec4::NAN.clamp($vec4::NEG_ONE, $vec4::ONE));
+            #[cfg(not(any(feature = "debug-glam-assert", feature = "glam-assert")))]
+            {
+                assert_eq!($vec4::ONE, $vec4::NAN.clamp($vec4::NAN, $vec4::ONE));
                 assert!($vec4::NAN
-                    .clamp($vec4::NEG_ONE, $vec4::ONE)
+                    .clamp($vec4::NEG_ONE, $vec4::NAN)
                     .is_nan_mask()
                     .all());
-                #[cfg(not(any(feature = "debug-glam-assert", feature = "glam-assert")))]
-                {
-                    assert!($vec4::NAN.clamp($vec4::NAN, $vec4::ONE).is_nan_mask().all());
-                    assert!($vec4::NAN
-                        .clamp($vec4::NEG_ONE, $vec4::NAN)
-                        .is_nan_mask()
-                        .all());
-                }
-            } else if $vec4::USES_SSE2 {
-                assert_eq!($vec4::NEG_ONE, $vec4::NAN.clamp($vec4::NEG_ONE, $vec4::ONE));
-                #[cfg(not(any(feature = "debug-glam-assert", feature = "glam-assert")))]
-                {
-                    assert_eq!($vec4::ONE, $vec4::NAN.clamp($vec4::NAN, $vec4::ONE));
-                    assert!($vec4::NAN
-                        .clamp($vec4::NEG_ONE, $vec4::NAN)
-                        .is_nan_mask()
-                        .all());
-                }
-            } else if $vec4::USES_WASM_SIMD {
-                assert!($vec4::NAN
-                    .clamp($vec4::NEG_ONE, $vec4::ONE)
-                    .is_nan_mask()
-                    .all());
-                #[cfg(not(any(feature = "debug-glam-assert", feature = "glam-assert")))]
-                {
-                    assert!($vec4::NAN.clamp($vec4::NAN, $vec4::ONE).is_nan_mask().all());
-                    assert!($vec4::NAN
-                        .clamp($vec4::NEG_ONE, $vec4::NAN)
-                        .is_nan_mask()
-                        .all());
-                }
-            } else if $vec4::USES_CORE_SIMD {
-                assert_eq!($vec4::NEG_ONE, $vec4::NAN.clamp($vec4::NEG_ONE, $vec4::ONE));
-                #[cfg(not(any(feature = "debug-glam-assert", feature = "glam-assert")))]
-                {
-                    assert_eq!($vec4::ONE, $vec4::NAN.clamp($vec4::NAN, $vec4::ONE));
-                    assert!($vec4::NAN
-                        .clamp($vec4::NEG_ONE, $vec4::NAN)
-                        .is_nan_mask()
-                        .all());
-                }
             }
+            
         });
 
         glam_test!(test_signum, {
@@ -2167,7 +2075,7 @@ mod vec4 {
     glam_test!(test_align, {
         use std::mem;
         assert_eq!(16, mem::size_of::<Vec4>());
-        if cfg!(any(not(feature = "scalar-math"), feature = "cuda")) {
+        if cfg!(not(feature = "scalar-math")) {
             assert_eq!(16, mem::align_of::<Vec4>());
         } else {
             assert_eq!(4, mem::align_of::<Vec4>());
@@ -2183,8 +2091,6 @@ mod vec4 {
         use glam::I64Vec4;
         #[cfg(feature = "i8")]
         use glam::I8Vec4;
-        #[cfg(feature = "isize")]
-        use glam::ISizeVec4;
         #[cfg(feature = "i32")]
         use glam::IVec4;
         #[cfg(feature = "u16")]
@@ -2193,8 +2099,6 @@ mod vec4 {
         use glam::U64Vec4;
         #[cfg(feature = "u8")]
         use glam::U8Vec4;
-        #[cfg(feature = "usize")]
-        use glam::USizeVec4;
         #[cfg(feature = "u32")]
         use glam::UVec4;
 
@@ -2217,16 +2121,9 @@ mod vec4 {
         impl_as_from_i64vec!(4);
         #[cfg(feature = "u64")]
         impl_as_from_u64vec!(4);
-        #[cfg(feature = "isize")]
-        impl_as_from_isizevec!(4);
-        #[cfg(feature = "usize")]
-        impl_as_from_usizevec!(4);
     });
 
-    #[cfg(all(
-        target_feature = "sse2",
-        not(any(feature = "core-simd", feature = "scalar-math"))
-    ))]
+    #[cfg(all(target_feature = "sse2", not(feature = "scalar-math")))]
     #[test]
     fn test_m128() {
         #[cfg(target_arch = "x86")]
@@ -2285,10 +2182,7 @@ mod dvec4 {
     glam_test!(test_align, {
         use std::mem;
         assert_eq!(32, mem::size_of::<DVec4>());
-        #[cfg(not(feature = "cuda"))]
         assert_eq!(mem::align_of::<f64>(), mem::align_of::<DVec4>());
-        #[cfg(feature = "cuda")]
-        assert_eq!(16, mem::align_of::<DVec4>());
     });
 
     glam_test!(test_try_from, {
@@ -2321,8 +2215,6 @@ macro_rules! impl_vec4_i8_try_from_tests {
             impl_try_from_pair_with_max_error!("u32", $src, UVec4, u32::MAX, 4);
             impl_try_from_pair_with_max_error!("i64", $src, I64Vec4, i64::MAX, 4);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec4, u64::MAX, 4);
-            impl_try_from_pair_with_max_error!("isize", $src, ISizeVec4, isize::MAX, 4);
-            impl_try_from_pair_with_max_error!("usize", $src, USizeVec4, usize::MAX, 4);
         });
     };
 }
@@ -2338,8 +2230,6 @@ macro_rules! impl_vec4_u8_try_from_tests {
             impl_try_from_pair_with_max_error!("u32", $src, UVec4, u32::MAX, 4);
             impl_try_from_pair_with_negmax_error!("i64", $src, I64Vec4, i64::MAX, 4);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec4, u64::MAX, 4);
-            impl_try_from_pair_with_max_error!("isize", $src, ISizeVec4, isize::MAX, 4);
-            impl_try_from_pair_with_max_error!("usize", $src, USizeVec4, usize::MAX, 4);
         });
     };
 }
@@ -2355,8 +2245,6 @@ macro_rules! impl_vec4_i16_try_from_tests {
             impl_try_from_pair_with_max_error!("u32", $src, UVec4, u32::MAX, 4);
             impl_try_from_pair_with_max_error!("i64", $src, I64Vec4, i64::MAX, 4);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec4, u64::MAX, 4);
-            impl_try_from_pair_with_max_error!("isize", $src, ISizeVec4, isize::MAX, 4);
-            impl_try_from_pair_with_max_error!("usize", $src, USizeVec4, usize::MAX, 4);
         });
     };
 }
@@ -2372,8 +2260,6 @@ macro_rules! impl_vec4_u16_try_from_tests {
             impl_try_from_pair_with_max_error!("u32", $src, UVec4, u32::MAX, 4);
             impl_try_from_pair_with_negmax_error!("i64", $src, I64Vec4, i64::MAX, 4);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec4, u64::MAX, 4);
-            impl_try_from_pair_with_max_error!("isize", $src, ISizeVec4, isize::MAX, 4);
-            impl_try_from_pair_with_max_error!("usize", $src, USizeVec4, usize::MAX, 4);
         });
     };
 }
@@ -2389,15 +2275,6 @@ macro_rules! impl_vec4_i32_try_from_tests {
             impl_try_from_pair_with_max_error!("u32", $src, UVec4, u32::MAX, 4);
             impl_try_from_pair_with_max_error!("i64", $src, I64Vec4, i64::MAX, 4);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec4, u64::MAX, 4);
-            impl_try_from_pair_with_sizeof_max_error!(
-                "isize",
-                $src,
-                ISizeVec4,
-                isize,
-                isize::MAX,
-                4
-            );
-            impl_try_from_pair_with_max_error!("usize", $src, USizeVec4, usize::MAX, 4);
         });
     };
 }
@@ -2413,22 +2290,6 @@ macro_rules! impl_vec4_u32_try_from_tests {
             impl_try_from_pair_with_negative_error!("i32", $src, IVec4, 4);
             impl_try_from_pair_with_negmax_error!("i64", $src, I64Vec4, i64::MAX, 4);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec4, u64::MAX, 4);
-            impl_try_from_pair_with_sizeof_max_error!(
-                "isize",
-                $src,
-                ISizeVec4,
-                isize,
-                isize::MAX,
-                4
-            );
-            impl_try_from_pair_with_sizeof_max_error!(
-                "usize",
-                $src,
-                USizeVec4,
-                usize,
-                usize::MAX,
-                4
-            );
         });
     };
 }
@@ -2444,15 +2305,6 @@ macro_rules! impl_vec4_i64_try_from_tests {
             impl_from_pair_infallible!("i32", $src, IVec4, 4);
             impl_from_pair_infallible!("u32", $src, UVec4, 4);
             impl_try_from_pair_with_max_error!("u64", $src, U64Vec4, u64::MAX, 4);
-            impl_try_from_pair_no_error!("isize", $src, ISizeVec4, 4);
-            impl_try_from_pair_with_sizeof_max_error!(
-                "usize",
-                $src,
-                USizeVec4,
-                usize,
-                usize::MAX,
-                4
-            );
         });
     };
 }
@@ -2468,45 +2320,13 @@ macro_rules! impl_vec4_u64_try_from_tests {
             impl_try_from_pair_with_negative_error!("i32", $src, IVec4, 4);
             impl_from_pair_infallible!("u32", $src, UVec4, 4);
             impl_try_from_pair_with_negative_error!("i64", $src, I64Vec4, 4);
-            impl_try_from_pair_with_negative_error!("isize", $src, ISizeVec4, 4);
-            impl_try_from_pair_no_error!("usize", $src, USizeVec4, 4);
         });
     };
 }
 
-#[cfg(feature = "isize")]
-macro_rules! impl_vec4_isize_try_from_tests {
-    ($src:ident, $scalar:ty) => {
-        glam_test!(test_try_from, {
-            impl_from_pair_infallible!("i8", $src, I8Vec4, 4);
-            impl_from_pair_infallible!("u8", $src, U8Vec4, 4);
-            impl_from_pair_infallible!("i16", $src, I16Vec4, 4);
-            impl_try_from_pair_no_error!("u16", $src, U16Vec4, 4);
-            impl_try_from_pair_no_error!("i32", $src, IVec4, 4);
-            impl_try_from_pair_no_error!("u32", $src, UVec4, 4);
-            impl_try_from_pair_with_max_error!("u64", $src, U64Vec4, u64::MAX, 4);
-            impl_try_from_pair_no_error!("i64", $src, I64Vec4, 4);
-            impl_try_from_pair_with_max_error!("usize", $src, USizeVec4, usize::MAX, 4);
-        });
-    };
-}
 
-#[cfg(feature = "usize")]
-macro_rules! impl_vec4_usize_try_from_tests {
-    ($src:ident, $scalar:ty) => {
-        glam_test!(test_try_from, {
-            impl_try_from_pair_with_negative_error!("i8", $src, I8Vec4, 4);
-            impl_from_pair_infallible!("u8", $src, U8Vec4, 4);
-            impl_try_from_pair_with_negative_error!("i16", $src, I16Vec4, 4);
-            impl_from_pair_infallible!("u16", $src, U16Vec4, 4);
-            impl_try_from_pair_with_negative_error!("i32", $src, IVec4, 4);
-            impl_try_from_pair_no_error!("u32", $src, UVec4, 4);
-            impl_try_from_pair_no_error!("u64", $src, U64Vec4, 4);
-            impl_try_from_pair_with_negative_error!("i64", $src, I64Vec4, 4);
-            impl_try_from_pair_with_negative_error!("isize", $src, ISizeVec4, 4);
-        });
-    };
-}
+
+
 
 #[cfg(feature = "i8")]
 mod i8vec4 {
@@ -2516,8 +2336,6 @@ mod i8vec4 {
     use glam::I64Vec4;
     #[cfg(feature = "i8")]
     use glam::I8Vec4;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec4;
     #[cfg(feature = "i32")]
     use glam::IVec4;
     #[cfg(feature = "u16")]
@@ -2526,8 +2344,6 @@ mod i8vec4 {
     use glam::U64Vec4;
     #[cfg(feature = "u8")]
     use glam::U8Vec4;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec4;
     #[cfg(feature = "u32")]
     use glam::UVec4;
     use glam::{i8vec4, BVec4, I8Vec2, I8Vec3};
@@ -2535,10 +2351,7 @@ mod i8vec4 {
     glam_test!(test_align, {
         use std::mem;
         assert_eq!(4, mem::size_of::<I8Vec4>());
-        #[cfg(not(feature = "cuda"))]
         assert_eq!(1, mem::align_of::<I8Vec4>());
-        #[cfg(feature = "cuda")]
-        assert_eq!(4, mem::align_of::<I8Vec4>());
     });
 
     impl_vec4_i8_try_from_tests!(I8Vec4, i8);
@@ -2563,16 +2376,12 @@ mod u8vec4 {
     use glam::I64Vec4;
     #[cfg(feature = "i8")]
     use glam::I8Vec4;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec4;
     #[cfg(feature = "i32")]
     use glam::IVec4;
     #[cfg(feature = "u16")]
     use glam::U16Vec4;
     #[cfg(feature = "u64")]
     use glam::U64Vec4;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec4;
     #[cfg(feature = "u32")]
     use glam::UVec4;
     use glam::{u8vec4, BVec4, U8Vec2, U8Vec3, U8Vec4};
@@ -2580,10 +2389,7 @@ mod u8vec4 {
     glam_test!(test_align, {
         use std::mem;
         assert_eq!(4, mem::size_of::<U8Vec4>());
-        #[cfg(not(feature = "cuda"))]
         assert_eq!(1, mem::align_of::<U8Vec4>());
-        #[cfg(feature = "cuda")]
-        assert_eq!(4, mem::align_of::<U8Vec4>());
     });
 
     impl_vec4_u8_try_from_tests!(U8Vec4, u8);
@@ -2606,8 +2412,6 @@ mod i16vec4 {
     use glam::I64Vec4;
     #[cfg(feature = "i8")]
     use glam::I8Vec4;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec4;
     #[cfg(feature = "i32")]
     use glam::IVec4;
     #[cfg(feature = "u16")]
@@ -2616,8 +2420,6 @@ mod i16vec4 {
     use glam::U64Vec4;
     #[cfg(feature = "u8")]
     use glam::U8Vec4;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec4;
     #[cfg(feature = "u32")]
     use glam::UVec4;
     use glam::{i16vec4, BVec4, I16Vec2, I16Vec3, I16Vec4};
@@ -2625,10 +2427,7 @@ mod i16vec4 {
     glam_test!(test_align, {
         use std::mem;
         assert_eq!(8, mem::size_of::<I16Vec4>());
-        #[cfg(not(feature = "cuda"))]
         assert_eq!(2, mem::align_of::<I16Vec4>());
-        #[cfg(feature = "cuda")]
-        assert_eq!(8, mem::align_of::<I16Vec4>());
     });
 
     impl_vec4_i16_try_from_tests!(I16Vec4, i16);
@@ -2653,16 +2452,12 @@ mod u16vec4 {
     use glam::I64Vec4;
     #[cfg(feature = "i8")]
     use glam::I8Vec4;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec4;
     #[cfg(feature = "i32")]
     use glam::IVec4;
     #[cfg(feature = "u64")]
     use glam::U64Vec4;
     #[cfg(feature = "u8")]
     use glam::U8Vec4;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec4;
     #[cfg(feature = "u32")]
     use glam::UVec4;
     use glam::{u16vec4, BVec4, U16Vec2, U16Vec3, U16Vec4};
@@ -2670,10 +2465,7 @@ mod u16vec4 {
     glam_test!(test_align, {
         use std::mem;
         assert_eq!(8, mem::size_of::<U16Vec4>());
-        #[cfg(not(feature = "cuda"))]
         assert_eq!(2, mem::align_of::<U16Vec4>());
-        #[cfg(feature = "cuda")]
-        assert_eq!(8, mem::align_of::<U16Vec4>());
     });
 
     impl_vec4_u16_try_from_tests!(U16Vec4, u16);
@@ -2698,16 +2490,12 @@ mod ivec4 {
     use glam::I64Vec4;
     #[cfg(feature = "i8")]
     use glam::I8Vec4;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec4;
     #[cfg(feature = "u16")]
     use glam::U16Vec4;
     #[cfg(feature = "u64")]
     use glam::U64Vec4;
     #[cfg(feature = "u8")]
     use glam::U8Vec4;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec4;
     #[cfg(feature = "u32")]
     use glam::UVec4;
     use glam::{ivec4, BVec4, IVec2, IVec3, IVec4};
@@ -2715,10 +2503,7 @@ mod ivec4 {
     glam_test!(test_align, {
         use std::mem;
         assert_eq!(16, mem::size_of::<IVec4>());
-        #[cfg(not(feature = "cuda"))]
         assert_eq!(4, mem::align_of::<IVec4>());
-        #[cfg(feature = "cuda")]
-        assert_eq!(16, mem::align_of::<IVec4>());
     });
 
     impl_vec4_i32_try_from_tests!(IVec4, i32);
@@ -2743,8 +2528,6 @@ mod uvec4 {
     use glam::I64Vec4;
     #[cfg(feature = "i8")]
     use glam::I8Vec4;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec4;
     #[cfg(feature = "i32")]
     use glam::IVec4;
     #[cfg(feature = "u16")]
@@ -2753,17 +2536,12 @@ mod uvec4 {
     use glam::U64Vec4;
     #[cfg(feature = "u8")]
     use glam::U8Vec4;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec4;
     use glam::{uvec4, BVec4, UVec2, UVec3, UVec4};
 
     glam_test!(test_align, {
         use std::mem;
         assert_eq!(16, mem::size_of::<UVec4>());
-        #[cfg(not(feature = "cuda"))]
         assert_eq!(4, mem::align_of::<UVec4>());
-        #[cfg(feature = "cuda")]
-        assert_eq!(16, mem::align_of::<UVec4>());
     });
 
     impl_vec4_u32_try_from_tests!(UVec4, u32);
@@ -2786,8 +2564,6 @@ mod i64vec4 {
     use glam::I16Vec4;
     #[cfg(feature = "i8")]
     use glam::I8Vec4;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec4;
     #[cfg(feature = "i32")]
     use glam::IVec4;
     #[cfg(feature = "u16")]
@@ -2796,8 +2572,6 @@ mod i64vec4 {
     use glam::U64Vec4;
     #[cfg(feature = "u8")]
     use glam::U8Vec4;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec4;
     #[cfg(feature = "u32")]
     use glam::UVec4;
     use glam::{i64vec4, BVec4, I64Vec2, I64Vec3, I64Vec4};
@@ -2805,10 +2579,7 @@ mod i64vec4 {
     glam_test!(test_align, {
         use std::mem;
         assert_eq!(32, mem::size_of::<I64Vec4>());
-        #[cfg(not(feature = "cuda"))]
         assert_eq!(8, mem::align_of::<I64Vec4>());
-        #[cfg(feature = "cuda")]
-        assert_eq!(16, mem::align_of::<I64Vec4>());
     });
 
     impl_vec4_i64_try_from_tests!(I64Vec4, i64);
@@ -2833,16 +2604,12 @@ mod u64vec4 {
     use glam::I64Vec4;
     #[cfg(feature = "i8")]
     use glam::I8Vec4;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec4;
     #[cfg(feature = "i32")]
     use glam::IVec4;
     #[cfg(feature = "u16")]
     use glam::U16Vec4;
     #[cfg(feature = "u8")]
     use glam::U8Vec4;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec4;
     #[cfg(feature = "u32")]
     use glam::UVec4;
     use glam::{u64vec4, BVec4, U64Vec2, U64Vec3, U64Vec4};
@@ -2850,10 +2617,7 @@ mod u64vec4 {
     glam_test!(test_align, {
         use std::mem;
         assert_eq!(32, mem::size_of::<U64Vec4>());
-        #[cfg(not(feature = "cuda"))]
         assert_eq!(8, mem::align_of::<U64Vec4>());
-        #[cfg(feature = "cuda")]
-        assert_eq!(16, mem::align_of::<U64Vec4>());
     });
 
     impl_vec4_u64_try_from_tests!(U64Vec4, u64);
@@ -2870,92 +2634,6 @@ mod u64vec4 {
     impl_vec4_bit_op_tests!(U64Vec4, 0, 2);
 }
 
-#[cfg(all(feature = "isize", not(target_arch = "wasm32")))]
-mod isizevec4 {
-    #[cfg(feature = "i16")]
-    use glam::I16Vec4;
-    #[cfg(feature = "i64")]
-    use glam::I64Vec4;
-    #[cfg(feature = "i8")]
-    use glam::I8Vec4;
-    #[cfg(feature = "i32")]
-    use glam::IVec4;
-    #[cfg(feature = "u16")]
-    use glam::U16Vec4;
-    #[cfg(feature = "u64")]
-    use glam::U64Vec4;
-    #[cfg(feature = "u8")]
-    use glam::U8Vec4;
-    #[cfg(feature = "usize")]
-    use glam::USizeVec4;
-    #[cfg(feature = "u32")]
-    use glam::UVec4;
-    use glam::{isizevec4, BVec4, ISizeVec2, ISizeVec3, ISizeVec4};
 
-    glam_test!(test_align, {
-        use std::mem;
-        assert_eq!(32, mem::size_of::<ISizeVec4>());
-        #[cfg(not(feature = "cuda"))]
-        assert_eq!(8, mem::align_of::<ISizeVec4>());
-        #[cfg(feature = "cuda")]
-        assert_eq!(16, mem::align_of::<ISizeVec4>());
-    });
 
-    impl_vec4_isize_try_from_tests!(ISizeVec4, isize);
 
-    impl_vec_wrapping_saturating_tests!(4, ISizeVec4, isize, USizeVec4, "usize", signed);
-
-    impl_vec4_signed_integer_tests!(isize, isizevec4, ISizeVec4, ISizeVec3, ISizeVec2, BVec4);
-    impl_vec4_eq_hash_tests!(isize, isizevec4);
-
-    impl_vec4_scalar_shift_op_tests!(ISizeVec4, -2, 2);
-    impl_vec4_shift_op_tests!(ISizeVec4);
-
-    impl_vec4_scalar_bit_op_tests!(ISizeVec4, -2, 2);
-    impl_vec4_bit_op_tests!(ISizeVec4, -2, 2);
-}
-
-#[cfg(feature = "usize")]
-mod usizevec4 {
-    #[cfg(feature = "i16")]
-    use glam::I16Vec4;
-    #[cfg(feature = "i64")]
-    use glam::I64Vec4;
-    #[cfg(feature = "i8")]
-    use glam::I8Vec4;
-    #[cfg(feature = "isize")]
-    use glam::ISizeVec4;
-    #[cfg(feature = "i32")]
-    use glam::IVec4;
-    #[cfg(feature = "u16")]
-    use glam::U16Vec4;
-    #[cfg(feature = "u64")]
-    use glam::U64Vec4;
-    #[cfg(feature = "u8")]
-    use glam::U8Vec4;
-    #[cfg(feature = "u32")]
-    use glam::UVec4;
-    use glam::{usizevec4, BVec4, USizeVec2, USizeVec3, USizeVec4};
-
-    glam_test!(test_align, {
-        use std::mem;
-        assert_eq!(mem::size_of::<usize>() * 4, mem::size_of::<USizeVec4>());
-        #[cfg(not(feature = "cuda"))]
-        assert_eq!(mem::align_of::<usize>(), mem::align_of::<USizeVec4>());
-        #[cfg(feature = "cuda")]
-        assert_eq!(16, mem::align_of::<USizeVec4>());
-    });
-
-    impl_vec4_usize_try_from_tests!(USizeVec4, usize);
-
-    impl_vec_wrapping_saturating_tests!(4, USizeVec4, usize, ISizeVec4, "isize", unsigned);
-
-    impl_vec4_unsigned_integer_tests!(usize, usizevec4, USizeVec4, USizeVec3, USizeVec2, BVec4);
-    impl_vec4_eq_hash_tests!(usize, usizevec4);
-
-    impl_vec4_scalar_shift_op_tests!(USizeVec4, 0, 2);
-    impl_vec4_shift_op_tests!(USizeVec4);
-
-    impl_vec4_scalar_bit_op_tests!(USizeVec4, 0, 2);
-    impl_vec4_bit_op_tests!(USizeVec4, 0, 2);
-}

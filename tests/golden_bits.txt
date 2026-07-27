@@ -1,0 +1,68 @@
+--- reductions ---
+vec4.dot                         bf428f5a
+vec4.length                      40cae41f
+vec4.length_squared              4220cccc
+vec4.element_sum                 bf4cccc8
+vec4.element_product             427a1567
+vec4.normalize                   3e894791 beb9bb2d 3f1d77bd bf258b01
+vec3a.dot                        3f6147af
+vec3a.length                     409ac324
+vec3a.element_sum                40533334
+vec3a.normalize                  3eb3f8b6 bef37daa 3f4e701c
+vec3a.cross                      3fbc28f6 3df5c294 bf11eb85
+--- min / max ---
+vec4.min                         3dcccccd c0133333 3e99999a c0833333
+vec4.max                         3fd9999a 3e4ccccd 4079999a 3ecccccd
+vec4.min_element                 c0833333
+vec4.max_element                 4079999a
+vec3a.min_element                c0133333
+vec3a.max_element                4079999a
+--- min / max with NaN ---
+nan.min                          3f800000 7fc00000 40400000 40800000
+nan.max                          3f800000 7fc00000 40600000 40900000
+nan.min_element                  40000000
+nan.max_element                  40800000
+nan.clamp                        bf800000 bf800000 bf800000 bf800000
+nan.min_element3                 3f800000 7fc00000 40400000
+--- signed zero ---
+zero.min                         80000000 00000000 80000000 00000000
+zero.max                         80000000 00000000 80000000 00000000
+--- rounding ---
+round                            40000000 c0000000 00000000 40000000
+floor                            40000000 c0400000 00000000 3f800000
+ceil                             40400000 c0000000 3f800000 40000000
+trunc                            40000000 c0000000 00000000 3f800000
+fract                            3f000000 bf000000 3f000000 3f000000
+--- division and square root ---
+recip                            3f169696 bede9bd4 3e834834 be79c190
+div                              3d70f0f1 bdb21643 3d9d89d9 bdc7ce0d
+sqrt_via_length                  40000000
+--- matrix ---
+mat4 * vec4                      3fbae148 3f266667 3fd91687 401a3d72
+mat4 * mat4                      3fbae148 3f266667 3fd91687 401a3d72 c1a00000 41f03d71 c18b374c 42291eb9 421d1aa0 c1affbe7 42208fc5 c13b4393 3e6147a0 4154f5c2 bf872b04 41da51ec
+mat4.inverse                     c4700385 4288acab 428ce02b 41122077 c4c02764 42db8952 42e201fa 416018aa 43a0b934 c1b4f67b c1bbbf4a c0443a5f 444082d2 c25c0338 c2620a52 c0df9300
+mat4.determinant                 3d7b2700
+mat4.transpose                   3dcccccd 3fd9999a bf333333 40533333 3e4ccccd c0133333 40a33333 bf8ccccd 3e99999a 4079999a 3ca3d70a 400ccccd 3ecccccd c0833333 4114cccd 3f800000
+mat4.transform_point3a           405c28f6 bc23d700 40410625
+mat4.transform_vector3a          3e0f5c2a 3f8b851f 3f50e560
+mat4.project_point3              3f924924 bb59ba34 3f804151
+mat3a * vec3a                    3e0f5c28 3f8b8520 3f50e561
+mat3a.determinant                bedb573a
+--- quaternion ---
+quat.normalize q1                3e3af4ba 3ebaf4ba 3f0c378c 3f3af4ba
+quat.normalize q2                bf0fd1fa 3dfd1fa4 3f49592b 3e661cc4
+quat.mul                         be19588d be8ed7c0 3f6cd88e be5643a0
+quat.slerp(0.25)                 bc8e7012 3eaa279c 3f2ce99f 3f28761f
+quat.slerp(0.5)                  be5d7371 3e8eb401 3f42c904 3f0b6c27
+quat.lerp(0.25)                  bb7da6fe 3eaba154 3f2b0a03 3f2a0c5b
+quat.mul_vec3a                   3dcccccc 3e4ccccc 3e99999a
+quat.dot                         3f099759
+quat.from_rotation_x             3eaf904d 00000000 00000000 3f707abb
+quat.from_euler_yxz              3e680100 3dbf1788 3e580c25 3f723f77
+quat.from_rotation_arc           bdf32186 3f5269b7 bf0e9d30 b33bbd2e
+--- affine ---
+affine.transform_point3a         c04d9c55 40885cd8 40aa2222
+affine.transform_vector3a        be59c54b 3e85cd7b 3ea22222
+--- camera ---
+perspective_rh_gl                3f9bdee5 00000000 00000000 00000000 00000000 40047d76 00000000 00000000 00000000 00000000 bf80068d bf800000 00000000 00000000 be4cd20a 00000000
+look_at_rh                       3f72dce9 be2d166d 3e88d677 00000000 00000000 3f585c08 3f08d677 00000000 bea1e89c bf01d0d1 3f4d41b2 00000000 33800000 80000000 c06f7750 3f800000

@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        profile: [native_simd, scalar_math, core_simd]
+        profile: [native_simd, scalar_math]
         os: [ubuntu-latest]
         include:
           - profile: native_simd

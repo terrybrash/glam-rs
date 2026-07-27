@@ -39,12 +39,41 @@ pub const fn quat(x: f32, y: f32, z: f32, w: f32) -> Quat {
 )]
 #[cfg_attr(not(feature = "scalar-math"), repr(align(16)))]
 #[repr(C)]
-#[cfg_attr(target_arch = "spirv", rust_gpu::vector::v1)]
 pub struct Quat {
     pub x: f32,
     pub y: f32,
     pub z: f32,
     pub w: f32,
+}
+
+/// Returns the sine of the angle in each lane.
+///
+/// This is the 11-degree minimax approximation from DirectXMath `XMVectorSin`.
+/// It is an approximation, not a correctly rounded sine, but every step is a
+/// multiply, an add, a compare or a select, so every backend gives the same
+/// bits and it costs far less than three scalar calls into `libm`. rewrite.md
+/// permits a fixed function of our own for this reason.
+///
+/// The error grows as the input moves away from `[-PI, PI]`.
+#[inline]
+fn sin_vec4(v: Vec4) -> Vec4 {
+    use core::f32::consts::{FRAC_PI_2, PI, TAU};
+    const RECIP_TAU: f32 = 0.159_154_94;
+
+    // Bring the angle within [-PI, PI].
+    let x = v - Vec4::splat(TAU) * (v * Vec4::splat(RECIP_TAU)).round();
+
+    // Map into [-PI/2, PI/2], where sin(y) == sin(x).
+    let reflected = Vec4::splat(PI).copysign(x) - x;
+    let x = Vec4::select(x.abs().cmple(Vec4::splat(FRAC_PI_2)), x, reflected);
+
+    let x2 = x * x;
+    let mut r = Vec4::splat(-2.388_985_9e-8).mul_add(x2, Vec4::splat(2.752_556_2e-6));
+    r = r.mul_add(x2, Vec4::splat(-0.000_198_408_74));
+    r = r.mul_add(x2, Vec4::splat(0.008_333_331));
+    r = r.mul_add(x2, Vec4::splat(-0.166_666_67));
+    r = r.mul_add(x2, Vec4::ONE);
+    r * x
 }
 
 impl Quat {
@@ -332,7 +361,13 @@ impl Quat {
         if dot > ONE_MINUS_EPS {
             // 0° singularity: from ≈ to
             Self::IDENTITY
-        } else if dot < -ONE_MINUS_EPS {
+        // The half-turn test includes the boundary, but the 0° test above does
+        // not. `from.dot(-from)` can land exactly on `-ONE_MINUS_EPS`, and a
+        // strict `<` then sends it to the general branch, where `cross` is
+        // exactly zero and `1.0 + dot` is near zero, so `normalize` gives the
+        // identity instead of a half turn. The general branch is safe at the 0°
+        // boundary, where `1.0 + dot` is near 2, so that test stays strict.
+        } else if dot <= -ONE_MINUS_EPS {
             // 180° singularity: from ≈ -to
             use core::f32::consts::PI; // half a turn = 𝛕/2 = 180°
             Self::from_axis_angle(from.any_orthonormal_vector(), PI)
@@ -744,10 +779,11 @@ impl Quat {
     fn slerp_impl(self, end: Self, dot: f32, s: f32) -> Self {
         let theta = math::acos_approx(dot);
 
-        let scale1 = math::sin(theta * (1.0 - s));
-        let scale2 = math::sin(theta * s);
-        let theta_sin = math::sin(theta);
-        ((self * scale1) + (end * scale2)) * (1.0 / theta_sin)
+        // The three sines come from one four-lane evaluation. Every step of
+        // `sin_vec4` is a multiply, an add, a compare or a select, so SSE2,
+        // NEON and the scalar reference all give the same bits. See rewrite.md.
+        let sins = sin_vec4(Vec4::splat(theta) * Vec4::new(1.0 - s, s, 1.0, 0.0));
+        ((self * sins.x) + (end * sins.y)) / sins.z
     }
 
     /// Performs a spherical linear interpolation between `self` and `end`

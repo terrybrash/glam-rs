@@ -35,7 +35,6 @@ pub const fn dquat(x: f64, y: f64, z: f64, w: f64) -> DQuat {
     derive(FromBytes, Immutable, IntoBytes, KnownLayout)
 )]
 #[repr(C)]
-#[cfg_attr(target_arch = "spirv", rust_gpu::vector::v1)]
 pub struct DQuat {
     pub x: f64,
     pub y: f64,
@@ -314,7 +313,13 @@ impl DQuat {
         if dot > ONE_MINUS_EPS {
             // 0° singularity: from ≈ to
             Self::IDENTITY
-        } else if dot < -ONE_MINUS_EPS {
+        // The half-turn test includes the boundary, but the 0° test above does
+        // not. `from.dot(-from)` can land exactly on `-ONE_MINUS_EPS`, and a
+        // strict `<` then sends it to the general branch, where `cross` is
+        // exactly zero and `1.0 + dot` is near zero, so `normalize` gives the
+        // identity instead of a half turn. The general branch is safe at the 0°
+        // boundary, where `1.0 + dot` is near 2, so that test stays strict.
+        } else if dot <= -ONE_MINUS_EPS {
             // 180° singularity: from ≈ -to
             use core::f64::consts::PI; // half a turn = 𝛕/2 = 180°
             Self::from_axis_angle(from.any_orthonormal_vector(), PI)
@@ -729,7 +734,7 @@ impl DQuat {
         let scale1 = math::sin(theta * (1.0 - s));
         let scale2 = math::sin(theta * s);
         let theta_sin = math::sin(theta);
-        ((self * scale1) + (end * scale2)) * (1.0 / theta_sin)
+        ((self * scale1) + (end * scale2)) / theta_sin
     }
 
     /// Performs a spherical linear interpolation between `self` and `end`

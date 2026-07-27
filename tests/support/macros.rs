@@ -3,8 +3,7 @@
 #[macro_export]
 macro_rules! glam_test {
     ($name:ident, $block:block) => {
-        #[cfg_attr(not(target_family = "wasm"), test)]
-        #[cfg_attr(target_family = "wasm", wasm_bindgen_test::wasm_bindgen_test)]
+        #[test]
         fn $name() {
             $block
         }
@@ -14,7 +13,7 @@ macro_rules! glam_test {
 #[macro_export]
 macro_rules! should_panic {
     ($block:block) => {{
-        #[cfg(all(feature = "std", panic = "unwind"))]
+        #[cfg(panic = "unwind")]
         assert!(std::panic::catch_unwind(|| $block).is_err());
     }};
 }

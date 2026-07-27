@@ -31,9 +31,7 @@ pub const fn dvec2(x: f64, y: f64) -> DVec2 {
     feature = "zerocopy",
     derive(FromBytes, Immutable, IntoBytes, KnownLayout)
 )]
-#[cfg_attr(feature = "cuda", repr(align(16)))]
 #[repr(C)]
-#[cfg_attr(target_arch = "spirv", rust_gpu::vector::v1)]
 pub struct DVec2 {
     pub x: f64,
     pub y: f64,
@@ -79,18 +77,12 @@ impl DVec2 {
     /// The unit axes.
     pub const AXES: [Self; 2] = [Self::X, Self::Y];
 
-    /// DVec2 uses Rust Portable SIMD
-    pub const USES_CORE_SIMD: bool = false;
     /// DVec2 uses Arm NEON
-    pub const USES_NEON: bool = false;
+    pub const USES_AARCH64: bool = false;
     /// DVec2 uses scalar math
     pub const USES_SCALAR_MATH: bool = true;
     /// DVec2 uses Intel SSE2
-    pub const USES_SSE2: bool = false;
-    /// DVec2 uses WebAssembly 128-bit SIMD
-    pub const USES_WASM_SIMD: bool = false;
-    #[deprecated(since = "0.31.0", note = "Renamed to USES_WASM_SIMD")]
-    pub const USES_WASM32_SIMD: bool = false;
+    pub const USES_X86_64: bool = false;
 
     /// Creates a new vector.
     #[inline(always)]
@@ -207,8 +199,8 @@ impl DVec2 {
     ///
     /// In other words this computes `[min(x, rhs.x), min(self.y, rhs.y), ..]`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics for minNum and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics for minNum. The
+    /// rule is `a < b ? a : b`, and it is the same on every backend.
     #[inline]
     #[must_use]
     pub fn min(self, rhs: Self) -> Self {
@@ -222,8 +214,8 @@ impl DVec2 {
     ///
     /// In other words this computes `[max(self.x, rhs.x), max(self.y, rhs.y), ..]`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics for maxNum and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics for maxNum. The
+    /// rule is `a > b ? a : b`, and it is the same on every backend.
     #[inline]
     #[must_use]
     pub fn max(self, rhs: Self) -> Self {
@@ -237,8 +229,8 @@ impl DVec2 {
     ///
     /// Each element in `min` must be less-or-equal to the corresponding element in `max`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics, but it is the
+    /// same on every backend.
     ///
     /// # Panics
     ///
@@ -254,8 +246,8 @@ impl DVec2 {
     ///
     /// In other words this computes `min(x, y, ..)`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics, but it is the
+    /// same on every backend.
     #[inline]
     #[must_use]
     pub fn min_element(self) -> f64 {
@@ -267,8 +259,8 @@ impl DVec2 {
     ///
     /// In other words this computes `max(x, y, ..)`.
     ///
-    /// NaN propogation does not follow IEEE 754-2008 semantics and may differ on
-    /// different SIMD architectures.
+    /// NaN propagation does not follow IEEE 754-2008 semantics, but it is the
+    /// same on every backend.
     #[inline]
     #[must_use]
     pub fn max_element(self) -> f64 {
@@ -556,7 +548,7 @@ impl DVec2 {
     #[must_use]
     pub fn normalize(self) -> Self {
         #[allow(clippy::let_and_return)]
-        let normalized = self.mul(self.length_recip());
+        let normalized = self.div(Self::splat(self.length()));
         glam_assert!(normalized.is_finite());
         normalized
     }
@@ -1190,22 +1182,6 @@ impl DVec2 {
     #[must_use]
     pub fn as_u64vec2(self) -> crate::U64Vec2 {
         crate::U64Vec2::new(self.x as u64, self.y as u64)
-    }
-
-    /// Casts all elements of `self` to `isize`.
-    #[cfg(feature = "isize")]
-    #[inline]
-    #[must_use]
-    pub fn as_isizevec2(self) -> crate::ISizeVec2 {
-        crate::ISizeVec2::new(self.x as isize, self.y as isize)
-    }
-
-    /// Casts all elements of `self` to `usize`.
-    #[cfg(feature = "usize")]
-    #[inline]
-    #[must_use]
-    pub fn as_usizevec2(self) -> crate::USizeVec2 {
-        crate::USizeVec2::new(self.x as usize, self.y as usize)
     }
 }
 

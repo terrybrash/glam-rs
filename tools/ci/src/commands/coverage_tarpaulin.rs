@@ -59,7 +59,6 @@ impl Prepare for CoverageTarpaulin {
         let profiles: &[(&str, &str)] = &[
             ("native_simd", crate::features::ALL_FEATURES),
             ("scalar_math", &scalar_features),
-            ("core_simd", crate::features::CORE_SIMD_FEATURES),
         ];
 
         for &(name, features) in profiles {
