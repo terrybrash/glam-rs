@@ -1270,12 +1270,27 @@ impl Mat4 {
     #[inline]
     #[must_use]
     pub fn project_point3(&self, rhs: Vec3) -> Vec3 {
-        let mut res = self.x_axis.mul(rhs.x);
-        res = self.y_axis.mul(rhs.y).add(res);
-        res = self.z_axis.mul(rhs.z).add(res);
-        res = self.w_axis.add(res);
-        res = res.div(res.w);
-        res.xyz()
+        #[cfg(feature = "fast-math")]
+        {
+            // Reassociated into a balanced tree and fused: fewer instructions and a
+            // shorter dependency chain. This reorders the sum and skips the
+            // intermediate rounding, so it is gated behind `fast-math`.
+            let a = self
+                .x_axis
+                .mul_add_fast(Vec4::splat(rhs.x), self.y_axis.mul(rhs.y));
+            let b = self.z_axis.mul_add_fast(Vec4::splat(rhs.z), self.w_axis);
+            let res = a.add(b);
+            res.div(res.w).xyz()
+        }
+        #[cfg(not(feature = "fast-math"))]
+        {
+            let mut res = self.x_axis.mul(rhs.x);
+            res = self.y_axis.mul(rhs.y).add(res);
+            res = self.z_axis.mul(rhs.z).add(res);
+            res = self.w_axis.add(res);
+            res = res.div(res.w);
+            res.xyz()
+        }
     }
 
     /// Transforms the given 3D vector as a point.
@@ -1294,11 +1309,25 @@ impl Mat4 {
     #[must_use]
     pub fn transform_point3(&self, rhs: Vec3) -> Vec3 {
         glam_assert!(self.row(3).abs_diff_eq(Vec4::W, 1e-6));
-        let mut res = self.x_axis.mul(rhs.x);
-        res = self.y_axis.mul(rhs.y).add(res);
-        res = self.z_axis.mul(rhs.z).add(res);
-        res = self.w_axis.add(res);
-        res.xyz()
+        #[cfg(feature = "fast-math")]
+        {
+            // Reassociated into a balanced tree and fused: fewer instructions and a
+            // shorter dependency chain. This reorders the sum and skips the
+            // intermediate rounding, so it is gated behind `fast-math`.
+            let a = self
+                .x_axis
+                .mul_add_fast(Vec4::splat(rhs.x), self.y_axis.mul(rhs.y));
+            let b = self.z_axis.mul_add_fast(Vec4::splat(rhs.z), self.w_axis);
+            a.add(b).xyz()
+        }
+        #[cfg(not(feature = "fast-math"))]
+        {
+            let mut res = self.x_axis.mul(rhs.x);
+            res = self.y_axis.mul(rhs.y).add(res);
+            res = self.z_axis.mul(rhs.z).add(res);
+            res = self.w_axis.add(res);
+            res.xyz()
+        }
     }
 
     /// Transforms the given 3D vector as a direction.
@@ -1315,10 +1344,23 @@ impl Mat4 {
     #[must_use]
     pub fn transform_vector3(&self, rhs: Vec3) -> Vec3 {
         glam_assert!(self.row(3).abs_diff_eq(Vec4::W, 1e-6));
-        let mut res = self.x_axis.mul(rhs.x);
-        res = self.y_axis.mul(rhs.y).add(res);
-        res = self.z_axis.mul(rhs.z).add(res);
-        res.xyz()
+        #[cfg(feature = "fast-math")]
+        {
+            // Reassociated into a balanced tree and fused: fewer instructions and a
+            // shorter dependency chain. This reorders the sum and skips the
+            // intermediate rounding, so it is gated behind `fast-math`.
+            let a = self
+                .x_axis
+                .mul_add_fast(Vec4::splat(rhs.x), self.y_axis.mul(rhs.y));
+            self.z_axis.mul_add_fast(Vec4::splat(rhs.z), a).xyz()
+        }
+        #[cfg(not(feature = "fast-math"))]
+        {
+            let mut res = self.x_axis.mul(rhs.x);
+            res = self.y_axis.mul(rhs.y).add(res);
+            res = self.z_axis.mul(rhs.z).add(res);
+            res.xyz()
+        }
     }
 
     /// Transforms the given [`Vec3A`] as a 3D point, applying perspective correction.
@@ -1355,11 +1397,26 @@ impl Mat4 {
     #[inline]
     #[must_use]
     pub fn mul_vec4(&self, rhs: Vec4) -> Vec4 {
-        let mut res = self.x_axis.mul(rhs.x);
-        res = res.add(self.y_axis.mul(rhs.y));
-        res = res.add(self.z_axis.mul(rhs.z));
-        res = res.add(self.w_axis.mul(rhs.w));
-        res
+        #[cfg(feature = "fast-math")]
+        {
+            // Reassociated into a balanced tree and fused. See the comment on the
+            // SIMD path below; gated behind `fast-math` for the same reason.
+            let a = self
+                .x_axis
+                .mul_add_fast(Vec4::splat(rhs.x), self.y_axis.mul(rhs.y));
+            let b = self
+                .z_axis
+                .mul_add_fast(Vec4::splat(rhs.z), self.w_axis.mul(rhs.w));
+            a.add(b)
+        }
+        #[cfg(not(feature = "fast-math"))]
+        {
+            let mut res = self.x_axis.mul(rhs.x);
+            res = res.add(self.y_axis.mul(rhs.y));
+            res = res.add(self.z_axis.mul(rhs.z));
+            res = res.add(self.w_axis.mul(rhs.w));
+            res
+        }
     }
 
     /// Transforms a 4D vector by the transpose of `self`.

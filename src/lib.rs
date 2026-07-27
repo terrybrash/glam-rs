@@ -291,11 +291,15 @@ and benchmarks.
 
 ## Minimum Supported Rust Version (MSRV)
 
-The minimum supported Rust version is `1.68.2`.
+The minimum supported Rust version is `1.98.0`.
 
 */
 #![doc(html_root_url = "https://docs.rs/glam/0.33.2")]
 #![cfg_attr(not(feature = "std"), no_std)]
+// `docsrs` is set only by the docs.rs build (see `[package.metadata.docs.rs]`), which runs on
+// nightly. This annotates every feature-gated item with the feature that enables it without
+// requiring nightly for ordinary builds.
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![cfg_attr(target_arch = "spirv", feature(repr_simd))]
 #![cfg_attr(target_arch = "wasm64", feature(simd_wasm64))]
 #![deny(

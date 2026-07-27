@@ -347,3 +347,18 @@ pub(crate) use std_math::*;
     not(feature = "nostd-libm")
 ))]
 pub(crate) use no_backend_math::*;
+
+/// Multiply-add for `glam`'s internal `fast-math` kernels.
+///
+/// Unlike [`mul_add`] this is backend independent and never calls into `libm`. The algebraic
+/// intrinsics let the compiler contract into an FMA instruction where the target has one and
+/// emit a plain multiply and add where it does not, so this is never slower than writing
+/// `a * b + c` by hand.
+///
+/// They also permit reassociation, so results are not portable across targets. Every caller
+/// must be behind the `fast-math` feature.
+#[cfg(feature = "fast-math")]
+#[inline(always)]
+pub(crate) fn mul_add_fast(a: f64, b: f64, c: f64) -> f64 {
+    a.algebraic_mul(b).algebraic_add(c)
+}

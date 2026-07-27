@@ -767,10 +767,23 @@ impl Mat3A {
     #[inline]
     #[must_use]
     pub fn mul_vec3a(&self, rhs: Vec3A) -> Vec3A {
-        let mut res = self.x_axis.mul(rhs.xxx());
-        res = res.add(self.y_axis.mul(rhs.yyy()));
-        res = res.add(self.z_axis.mul(rhs.zzz()));
-        res
+        #[cfg(feature = "fast-math")]
+        {
+            // Reassociated into a balanced tree and fused: fewer instructions and a
+            // shorter dependency chain. This reorders the sum and skips the
+            // intermediate rounding, so it is gated behind `fast-math`.
+            let a = self
+                .x_axis
+                .mul_add_fast(rhs.xxx(), self.y_axis.mul(rhs.yyy()));
+            self.z_axis.mul_add_fast(rhs.zzz(), a)
+        }
+        #[cfg(not(feature = "fast-math"))]
+        {
+            let mut res = self.x_axis.mul(rhs.xxx());
+            res = res.add(self.y_axis.mul(rhs.yyy()));
+            res = res.add(self.z_axis.mul(rhs.zzz()));
+            res
+        }
     }
 
     /// Transforms a 3D vector by the transpose of `self`.

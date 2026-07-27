@@ -1036,6 +1036,19 @@ impl Vec3A {
         Self(self.0.mul_add(a.0, b.0))
     }
 
+    /// Multiply-add used by `glam`'s internal `fast-math` kernels.
+    ///
+    /// Unlike [`Self::mul_add`] this never falls back to a scalar `libm` call. Where the
+    /// target has no FMA instruction it performs an unfused `self * a + b` instead, which is
+    /// what the kernel would have done anyway. [`Self::mul_add`] cannot do that because it
+    /// promises a single rounding.
+    #[cfg(feature = "fast-math")]
+    #[inline(always)]
+    #[must_use]
+    pub(crate) fn mul_add_fast(self, a: Self, b: Self) -> Self {
+        Self(self.0 * a.0 + b.0)
+    }
+
     /// Returns the reflection vector for a given incident vector `self` and surface normal
     /// `normal`.
     ///

@@ -1,6 +1,6 @@
 use xshell::{Cmd, Shell};
 
-pub const MSRV: &str = "1.68.2";
+pub const MSRV: &str = "1.98.0";
 pub const NIGHTLY: &str = "nightly";
 
 pub fn cargo<'a>(sh: &'a Shell, toolchain: &str) -> Cmd<'a> {

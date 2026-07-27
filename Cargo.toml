@@ -8,10 +8,28 @@ readme = "README.md"
 license = "MIT OR Apache-2.0"
 keywords = ["gamedev", "math", "matrix", "vector", "quaternion"]
 categories = ["game-engines", "no-std"]
-rust-version = "1.68.2"
+rust-version = "1.98.0"
 
 [badges]
 maintenance = { status = "actively-developed" }
+
+# docs.rs builds on nightly, so `doc_auto_cfg` can annotate feature-gated items there without
+# requiring nightly for ordinary builds. Features are listed explicitly rather than using
+# `all-features`, which would enable the mutually exclusive and non-default `scalar-math`,
+# `cuda` and `fast-math` and misrepresent the default API.
+[package.metadata.docs.rs]
+features = [
+    "std",
+    "all-types",
+    "approx",
+    "bytemuck",
+    "mint",
+    "rand",
+    "serde",
+    "rkyv",
+    "zerocopy",
+]
+rustdoc-args = ["--cfg", "docsrs"]
 
 [features]
 default = ["std", "all-types"]

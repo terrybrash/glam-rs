@@ -7,6 +7,43 @@ The format is based on [Keep a Changelog], and this project adheres to
 
 ## [Unreleased]
 
+### Changed
+
+* **Breaking**: the minimum supported Rust version is now `1.98.0`, up from
+  `1.68.2`. This is required for the stabilised float algebraic intrinsics
+  (`f32::algebraic_mul` and friends) used by the `fast-math` kernels below.
+
+* The `fast-math` feature now reassociates the matrix transform kernels into a
+  balanced tree and fuses their multiplies, on **every** backend. This affects
+  `Mat4::mul_vec4`, `Mat4`'s `transform_point3`, `transform_vector3`,
+  `project_point3` and their `Vec3A` variants, `Mat3A::mul_vec3a` (and so
+  `Affine3A`, which delegates to it), and `Mat3`/`DMat3`/`DMat4`.
+
+  The scalar and `f64` types benefit most, since they have no SIMD backend at
+  all and were previously untouched: on `aarch64`, `DMat4::mul_vec4` drops from
+  14 to 10 floating-point operations, `DMat4::transform_point3` from 12 to 8,
+  and `Mat3::mul_vec3` from 10 to 6. On the SIMD backends the 4-element
+  reductions measured a 23-30% throughput and 14-17% latency improvement. The
+  3-element reductions gain throughput but lose dependent-chain latency, as no
+  tree reduction is available for an odd number of terms.
+
+  Fusing is done with the algebraic intrinsics rather than `mul_add`, so it is
+  never slower than an unfused multiply and add: where the target has no FMA
+  instruction the compiler simply emits a multiply and an add. `mul_add` cannot
+  be used here because it promises a single rounding and therefore falls back to
+  a `libm` call when the target lacks FMA — on baseline `x86_64`, which
+  guarantees only SSE2, that made these kernels several times slower.
+
+  Builds without `fast-math` are unaffected and remain bit-for-bit identical.
+
+### Added
+
+* `[package.metadata.docs.rs]` and `doc_cfg`, so the documentation on docs.rs
+  now annotates feature-gated items with the feature that enables them, and
+  builds with the optional dependencies enabled. This uses a `docsrs` cfg set
+  only by the docs.rs build, so it does not require a nightly toolchain for
+  ordinary builds.
+
 ## [0.33.2] - 2026-06-28
 
 ### Added
