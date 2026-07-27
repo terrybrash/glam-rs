@@ -1,5 +1,19 @@
 # Attribution
 
+## Vendored code
+
+`tools/codegen` holds a copy of [glam-codegen], taken at commit
+`673ed2c712d0c2db35fed00a21da7f132ab3cd7f`. It was a git submodule. This fork
+carries local changes to the tool, thus a submodule that points at an upstream
+commit cannot hold them, and a clone would need an extra step. The copy keeps
+both licence files, `tools/codegen/LICENSE-APACHE` and
+`tools/codegen/LICENSE-MIT`. The terms are the same as `glam`'s own: MIT or
+Apache-2.0, at your option.
+
+[glam-codegen]: https://github.com/bitshifter/glam-codegen
+
+## Ported code
+
 `glam` contains code ported from the following C++ libraries.
 
 ## [DirectXMath]

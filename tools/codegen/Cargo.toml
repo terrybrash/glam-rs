@@ -1,0 +1,23 @@
+[package]
+name = "codegen"
+description = "A tool to generate Rust source code from tera templates"
+version = "0.2.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = { version = "1" }
+argh = "0.1"
+argh_derive = "0.1"
+git2 = { version = "0.21", default-features = false }
+globset = { version = "0.4", default-features = false }
+rustfmt-wrapper = { version = "0.2" }
+serde = { version = "1.0", default-features = false, features = ["std"] }
+serde_json = { version = "1.0", default-features = false, features = ["std"] }
+tera = { version = "2", default-features = false, features = ["glob_fs"] }
+
+[dev-dependencies]
+insta = "1"
+tempfile = "3"
+assert_cmd = "2"

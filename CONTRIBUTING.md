@@ -48,8 +48,8 @@ to modify the code templates and generate new source code.
 Edit templates in the `templates/` directory (they use the [Tera v2] templating
 language) and the `codegen.json` file which maps templates to output files.
 After modifying templates, run `cargo run --release -p codegen` from the repo
-root to regenerate source files (requires initializing the codegen submodule
-with `git submodule update --init tools/codegen`).
+root to regenerate source files. The codegen tool lives in `tools/codegen` and
+is vendored, so a plain `git clone` is all you need.
 
 You can run `glam`'s test suite locally by running `cargo run -p ci`.
 It's worth running that before creating a PR.
